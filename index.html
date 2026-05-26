@@ -363,17 +363,21 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no extra
   "summary": "2-3 sentence overall summary"
 }`;
 
-  const res = await fetch('https://uqbvpytbqvlubuekgcbz.supabase.co/functions/v1/groq-proxy', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
+  const { data, error } = await sb.functions.invoke('groq-proxy', {
+    body: {
       model: 'llama-3.3-70b-versatile',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 1500,
-    }),
+    },
   });
+  
+  if (error) {
+    throw new Error(error.message);
+  }
+  
+  const text = data.choices?.[0]?.message?.content || '';
+  
+  return JSON.parse(text.replace(/```json|```/g, '').trim());
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
