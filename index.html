@@ -295,7 +295,6 @@ const sb = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxYnZweXRicXZsdWJ1ZWtnY2J6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NDgwMzcsImV4cCI6MjA5MTAyNDAzN30._SvaS0J-geH725suru-0Gd0S53QuJ1Rd2Sevtg5Bg1E'
 );
 
-const GROQ_KEY = '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';
 const SOURCES    = ['User Interview','Support Ticket','Survey','App Review','Other'];
 const CATEGORIES = ['UX','Performance','Feature Request','Bug','Other'];
 const SENTIMENTS = ['Positive','Negative','Neutral'];
@@ -364,14 +363,16 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no extra
   "summary": "2-3 sentence overall summary"
 }`;
 
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  const res = await fetch('https://uqbvpytbqvlubuekgcbz.supabase.co/functions/v1/groq-proxy', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_KEY}` },
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({
       model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: prompt }],
       max_tokens: 1500,
-      messages: [{ role: 'user', content: prompt }]
-    })
+    }),
   });
 
   if (!res.ok) {
