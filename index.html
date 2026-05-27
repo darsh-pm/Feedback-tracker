@@ -114,7 +114,6 @@
     }
     textarea.ctrl { resize: vertical; min-height: 88px; }
 
-    /* filter select — identical appearance regardless of selected value */
     .filter-select {
       background: var(--surface);
       border: 1px solid var(--border-hi);
@@ -132,12 +131,10 @@
       border-color: #58a6ff;
       box-shadow: 0 0 0 3px rgba(88,166,255,.12);
     }
-    /* Active: border + text of the closed button turn blue */
     .filter-select.active {
       border-color: rgba(88,166,255,.55);
       color: #58a6ff;
     }
-    /* Options must always be white — they must NOT inherit the blue from .active */
     .filter-select option,
     .filter-select.active option {
       color: #e6edf3;
@@ -173,6 +170,38 @@
     }
     .btn-ghost:hover { color: var(--neg); border-color: var(--neg); background: rgba(248,81,73,.06); }
 
+    .btn-demo {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border-hi);
+      border-radius: 6px;
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 18px;
+      cursor: pointer;
+      width: 100%;
+      transition: color .15s, border-color .15s, background .15s;
+    }
+    .btn-demo:hover {
+      color: var(--text);
+      border-color: var(--border-hi);
+      background: rgba(255,255,255,.04);
+    }
+
+    .btn-exit-demo {
+      background: rgba(210,153,34,.08);
+      color: #d2a22a;
+      border: 1px solid rgba(210,153,34,.3);
+      border-radius: 6px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .btn-exit-demo:hover { background: rgba(210,153,34,.15); border-color: rgba(210,153,34,.5); }
+
     .btn-clear {
       background: rgba(210,153,34,.08);
       color: #d2a22a;
@@ -205,6 +234,20 @@
     }
     .btn-ai:hover { background: rgba(88,166,255,.18); border-color: rgba(88,166,255,.5); }
     .btn-ai:disabled { opacity: .45; cursor: not-allowed; }
+
+    .demo-banner {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(210,153,34,.12);
+      border-bottom: 1px solid rgba(210,153,34,.3);
+      backdrop-filter: blur(8px);
+      padding: 9px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
 
     .cat-row {
       display: flex;
@@ -253,7 +296,6 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .spin { animation: spin 1s linear infinite; }
 
-    /* Modal */
     @keyframes modalIn {
       from { opacity: 0; transform: translateY(12px) scale(0.98); }
       to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -262,14 +304,9 @@
       from { opacity: 0; }
       to   { opacity: 1; }
     }
-    .modal-backdrop {
-      animation: backdropIn 0.18s ease-out forwards;
-    }
-    .modal-panel {
-      animation: modalIn 0.2s ease-out forwards;
-    }
+    .modal-backdrop { animation: backdropIn 0.18s ease-out forwards; }
+    .modal-panel    { animation: modalIn 0.2s ease-out forwards; }
 
-    /* Clickable card */
     .feedback-card-clickable {
       cursor: pointer;
       transition: border-color .15s, background .15s, transform .12s;
@@ -319,6 +356,16 @@ const CAT_BG = {
   'Bug':             'rgba(248,113,113,.08)',
   'Other':           'rgba(148,163,184,.08)',
 };
+
+const DEMO_ITEMS = [
+  { id: 'f1', createdAt: '2026-05-01T10:00:00Z', userId: 'demo', title: 'Onboarding feels overwhelming', content: 'New users are dropping off at step 3 of onboarding. The number of required fields is too high for a first-time setup.', source: 'User Interview', category: 'UX', sentiment: 'Negative', status: 'open' },
+  { id: 'f2', createdAt: '2026-05-03T11:00:00Z', userId: 'demo', title: 'Export to CSV is a must-have', content: 'Multiple enterprise customers have requested the ability to export their data to CSV for reporting purposes.', source: 'Support Ticket', category: 'Feature Request', sentiment: 'Neutral', status: 'open' },
+  { id: 'f3', createdAt: '2026-05-05T09:00:00Z', userId: 'demo', title: 'Dashboard loads slowly', content: 'On datasets larger than 500 rows the dashboard takes 8-10 seconds to render. Unacceptable for daily use.', source: 'App Review', category: 'Performance', sentiment: 'Negative', status: 'inprogress' },
+  { id: 'f4', createdAt: '2026-05-07T14:00:00Z', userId: 'demo', title: 'Love the new filter system', content: 'The multi-filter update is excellent. Being able to combine sentiment and source filters saves a lot of time.', source: 'User Interview', category: 'UX', sentiment: 'Positive', status: 'addressed' },
+  { id: 'f5', createdAt: '2026-05-10T08:00:00Z', userId: 'demo', title: 'Bulk status update needed', content: 'When triaging 50+ feedback items, updating status one by one is tedious. A bulk select and update would help.', source: 'Survey', category: 'Feature Request', sentiment: 'Neutral', status: 'open' },
+  { id: 'f6', createdAt: '2026-05-12T16:00:00Z', userId: 'demo', title: 'Search crashes on special characters', content: 'Typing & or % in the search box throws a console error and breaks the results list. Reproducible 100% of the time.', source: 'Support Ticket', category: 'Bug', sentiment: 'Negative', status: 'inprogress' },
+  { id: 'f7', createdAt: '2026-05-14T10:30:00Z', userId: 'demo', title: 'AI summary is surprisingly accurate', content: 'Used the AI analysis feature for the first time. The pain point identification was spot on. Will use this weekly.', source: 'App Review', category: 'Feature Request', sentiment: 'Positive', status: 'addressed' },
+];
 
 function fmtDate(iso) {
   if (!iso) return '';
@@ -371,14 +418,10 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no extra
     },
   });
   
-  if (error) {
-    throw new Error(error.message);
-  }
+  if (error) throw new Error(error.message);
   
   const text = data.choices?.[0]?.message?.content || '';
-  
   return JSON.parse(text.replace(/```json|```/g, '').trim());
-
 }
 
 /* ── AI Panel ── */
@@ -478,7 +521,7 @@ function AIAnalysisPanel({ analysis, onDismiss }) {
 }
 
 /* ── Auth ── */
-function AuthForm() {
+function AuthForm({ onEnterDemo }) {
   const [mode, setMode]       = React.useState('login');
   const [email, setEmail]     = React.useState('');
   const [pass, setPass]       = React.useState('');
@@ -522,6 +565,21 @@ function AuthForm() {
               {loading ? 'Please wait…' : mode === 'login' ? 'Sign In' : 'Sign Up'}
             </button>
           </form>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-5">
+            <div style={{flex:1,height:'1px',background:'var(--border-hi)'}} />
+            <span className="font-mono text-[10px] uppercase tracking-widest" style={{color:'var(--muted)'}}>or</span>
+            <div style={{flex:1,height:'1px',background:'var(--border-hi)'}} />
+          </div>
+
+          <button onClick={onEnterDemo} className="btn-demo flex items-center justify-center gap-2">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+              <rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.4"/>
+              <path d="M6 6l4 2-4 2V6z" fill="currentColor"/>
+            </svg>
+            Try Demo
+          </button>
         </div>
         <p className="font-mono text-xs text-center mt-5" style={{color:'var(--muted)'}}>
           {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
@@ -535,7 +593,7 @@ function AuthForm() {
   );
 }
 
-/* ── FeedbackForm — all fields mandatory ── */
+/* ── FeedbackForm ── */
 function FeedbackForm({ onAdd }) {
   const [title,     setTitle]     = React.useState('');
   const [content,   setContent]   = React.useState('');
@@ -577,7 +635,6 @@ function FeedbackForm({ onAdd }) {
           style={{background:'none',border:'none',cursor:'pointer',color:'var(--muted)',fontSize:'18px',lineHeight:1,padding:'0 4px'}}>×</button>
       </div>
       <div className="flex flex-col gap-3">
-        {/* Title */}
         <div className="flex flex-col gap-1">
           <label className="font-mono text-[10px]" style={{color:'var(--muted)'}}>Title <span style={{color:'var(--neg)'}}>*</span></label>
           <input
@@ -589,7 +646,6 @@ function FeedbackForm({ onAdd }) {
             required
           />
         </div>
-        {/* Description */}
         <div className="flex flex-col gap-1">
           <label className="font-mono text-[10px]" style={{color:'var(--muted)'}}>Description <span style={{color:'var(--neg)'}}>*</span></label>
           <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Full details of the feedback…" className="ctrl" required />
@@ -639,21 +695,15 @@ function FeedbackDetailModal({ item, onClose, onStatusChange, onDescriptionSave 
   const [saveSuccess, setSaveSuccess] = React.useState(false);
   const [warnUnsaved, setWarnUnsaved] = React.useState(false);
 
-  // Track what's actually persisted so we can detect dirty state
   const savedDescription = React.useRef(item.content);
   const savedStatus      = React.useRef(item.status);
 
   const isDirty = description !== savedDescription.current || status !== savedStatus.current;
 
   function attemptClose() {
-    if (isDirty) {
-      setWarnUnsaved(true);
-    } else {
-      onClose();
-    }
+    if (isDirty) { setWarnUnsaved(true); } else { onClose(); }
   }
 
-  // Close on Escape
   React.useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') attemptClose(); }
     window.addEventListener('keydown', onKey);
@@ -690,7 +740,6 @@ function FeedbackDetailModal({ item, onClose, onStatusChange, onDescriptionSave 
         border:'1px solid var(--border-hi)',
         borderRadius:'10px',
       }}>
-        {/* Header */}
         <div className="flex items-start justify-between gap-3 px-6 py-5 border-b" style={{borderColor:'var(--border)'}}>
           <div className="flex-1 min-w-0">
             <h2 className="font-sans font-600 text-base leading-snug" style={{color:'var(--text)',wordBreak:'break-word'}}>
@@ -703,7 +752,6 @@ function FeedbackDetailModal({ item, onClose, onStatusChange, onDescriptionSave 
             title="Close">×</button>
         </div>
 
-        {/* Unsaved changes warning */}
         {warnUnsaved && (
           <div className="mx-6 mt-4 px-4 py-3 rounded-lg flex items-start justify-between gap-3 fade-up"
             style={{background:'rgba(210,153,34,.1)',border:'1px solid rgba(210,153,34,.3)',borderRadius:'8px'}}>
@@ -730,17 +778,12 @@ function FeedbackDetailModal({ item, onClose, onStatusChange, onDescriptionSave 
           </div>
         )}
 
-        {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
-
-          {/* Badges row */}
           <div className="flex flex-wrap items-center gap-1.5">
             <span className={`badge ${sentBadge}`}>{item.sentiment}</span>
             <span className="badge badge-category">{item.category}</span>
             <span className="badge badge-source">{item.source}</span>
           </div>
-
-          {/* Description — edited locally, saved only on Save click */}
           <div className="flex flex-col gap-1.5">
             <label className="font-mono text-[10px] uppercase tracking-wider" style={{color:'var(--muted)'}}>Description</label>
             <textarea
@@ -751,8 +794,6 @@ function FeedbackDetailModal({ item, onClose, onStatusChange, onDescriptionSave 
               placeholder="No description yet…"
             />
           </div>
-
-          {/* Status — edited locally, saved only on Save click */}
           <div className="flex flex-col gap-1.5">
             <label className="font-mono text-[10px] uppercase tracking-wider" style={{color:'var(--muted)'}}>Status</label>
             <div className="flex gap-2 flex-wrap">
@@ -773,7 +814,6 @@ function FeedbackDetailModal({ item, onClose, onStatusChange, onDescriptionSave 
           </div>
         </div>
 
-        {/* Footer — Save only, no Close button */}
         <div className="px-6 py-4 border-t flex items-center justify-between" style={{borderColor:'var(--border)'}}>
           <span className="font-mono text-[10px]" style={{color: isDirty ? '#d2a22a' : 'var(--muted)'}}>
             {saving ? 'Saving…' : saveSuccess ? '✓ Saved' : isDirty ? 'Unsaved changes' : 'No changes'}
@@ -789,7 +829,7 @@ function FeedbackDetailModal({ item, onClose, onStatusChange, onDescriptionSave 
   );
 }
 
-/* ── FeedbackCard — title only, click to open modal, confirm before delete ── */
+/* ── FeedbackCard ── */
 function FeedbackCard({ item, onDelete, onOpenDetail }) {
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [deleting,      setDeleting]      = React.useState(false);
@@ -817,7 +857,6 @@ function FeedbackCard({ item, onDelete, onOpenDetail }) {
         transition:'opacity .2s',
       }}
     >
-      {/* Delete confirmation overlay */}
       {confirmDelete ? (
         <div className="flex items-center justify-between gap-3" onClick={e => e.stopPropagation()}>
           <p className="font-mono text-xs" style={{color:'var(--muted)'}}>
@@ -867,7 +906,7 @@ function FeedbackCard({ item, onDelete, onOpenDetail }) {
   );
 }
 
-/* ── Category Breakdown — count only, no percentage ── */
+/* ── Category Breakdown ── */
 function CategoryBreakdown({ items, activeCategoryFilter, onCategoryClick }) {
   return (
     <div className="fade-up mb-6" style={{
@@ -894,7 +933,6 @@ function CategoryBreakdown({ items, activeCategoryFilter, onCategoryClick }) {
               <div className="progress-track">
                 <div className="progress-fill" style={{width:`${pct}%`,background:color,opacity:isActive?1:0.55}} />
               </div>
-              {/* count only — no percentage */}
               <span className="font-mono text-[10px] shrink-0" style={{color:isActive?color:'var(--muted)',width:22,textAlign:'right',transition:'color .15s'}}>
                 {count}
               </span>
@@ -906,7 +944,7 @@ function CategoryBreakdown({ items, activeCategoryFilter, onCategoryClick }) {
   );
 }
 
-/* ── FilterBar — three dropdowns; clear sits below Sentiment ── */
+/* ── FilterBar ── */
 function FilterBar({ sentimentFilter, setSentimentFilter, statusFilter, setStatusFilter, sourceFilter, setSourceFilter, hasActiveFilter, onClear }) {
   const dropdowns = [
     { key:'sentiment', label:'Sentiment', value:sentimentFilter, set:setSentimentFilter, options:[['all','Sentiment: All'], ...SENTIMENTS.map(s=>[s,s])] },
@@ -916,12 +954,8 @@ function FilterBar({ sentimentFilter, setSentimentFilter, statusFilter, setStatu
 
   return (
     <div className="mb-5" style={{display:'flex', alignItems:'flex-start', gap:'12px'}}>
-      {/* "Filters:" label — fixed width column */}
       <span className="font-mono text-[10px] uppercase tracking-wider shrink-0" style={{color:'var(--muted)', paddingTop:'7px'}}>Filters:</span>
-
-      {/* Right column: dropdowns row + clear below Sentiment */}
       <div style={{display:'flex', flexDirection:'column', gap:'7px'}}>
-        {/* Dropdowns row */}
         <div style={{display:'flex', alignItems:'center', gap:'12px', flexWrap:'wrap'}}>
           {dropdowns.map(({ key, label, value, set, options }) => (
             <div key={key} style={{position:'relative', display:'inline-flex', alignItems:'center', width:'130px'}}>
@@ -939,8 +973,6 @@ function FilterBar({ sentimentFilter, setSentimentFilter, statusFilter, setStatu
             </div>
           ))}
         </div>
-
-        {/* Clear filters — same width as a dropdown, sits directly below Sentiment */}
         {hasActiveFilter && (
           <div className="fade-up" style={{width:'130px'}}>
             <button onClick={onClear} className="btn-clear" style={{width:'100%', justifyContent:'center', whiteSpace:'nowrap', fontSize:'10px'}}>
@@ -956,10 +988,36 @@ function FilterBar({ sentimentFilter, setSentimentFilter, statusFilter, setStatu
   );
 }
 
+/* ── Demo Banner ── */
+function DemoBanner({ onExitDemo }) {
+  return (
+    <div className="demo-banner">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style={{flexShrink:0}}>
+        <rect x="1" y="3" width="14" height="10" rx="2" stroke="#d2a22a" strokeWidth="1.4"/>
+        <path d="M6 6l4 2-4 2V6z" fill="#d2a22a"/>
+      </svg>
+      <span className="font-mono text-[11px]" style={{color:'#d2a22a'}}>
+        Demo mode — changes are not saved
+      </span>
+      <span className="font-mono text-[11px]" style={{color:'rgba(210,153,34,.5)'}}>·</span>
+      <button
+        onClick={onExitDemo}
+        className="font-mono text-[11px]"
+        style={{
+          background:'none', border:'none', cursor:'pointer',
+          color:'#58a6ff', textDecoration:'underline', textUnderlineOffset:'2px', padding:0,
+        }}
+      >
+        Sign up to save your work
+      </button>
+    </div>
+  );
+}
+
 /* ── Main Tracker ── */
-function FeedbackTracker({ user }) {
-  const [items,           setItems]           = React.useState([]);
-  const [loading,         setLoading]         = React.useState(true);
+function FeedbackTracker({ user, isDemo, onExitDemo }) {
+  const [items,           setItems]           = React.useState(isDemo ? DEMO_ITEMS : []);
+  const [loading,         setLoading]         = React.useState(!isDemo);
   const [error,           setError]           = React.useState('');
   const [sentimentFilter, setSentimentFilter] = React.useState('all');
   const [statusFilter,    setStatusFilter]    = React.useState('all');
@@ -978,6 +1036,7 @@ function FeedbackTracker({ user }) {
   }
 
   React.useEffect(() => {
+    if (isDemo) return; // skip DB fetch in demo
     (async () => {
       const { data, error } = await sb.from('feedback').select('*').order('created_at', { ascending: false });
       if (error) showError('Failed to load: ' + error.message);
@@ -987,6 +1046,19 @@ function FeedbackTracker({ user }) {
   }, []);
 
   async function handleAdd(fields) {
+    const newItem = {
+      id: 'demo-' + Date.now(),
+      createdAt: new Date().toISOString(),
+      userId: user.id || 'demo',
+      status: 'open',
+      ...fields,
+    };
+
+    if (isDemo) {
+      setItems(prev => [newItem, ...prev]);
+      return;
+    }
+
     const { data: { user: u } } = await sb.auth.getUser();
     const payload = { ...fields, status: 'open', user_id: u?.id };
     const { data, error } = await sb.from('feedback').insert(payload).select().single();
@@ -996,6 +1068,8 @@ function FeedbackTracker({ user }) {
 
   async function handleDelete(id) {
     setItems(prev => prev.filter(i => i.id !== id));
+    if (isDemo) return;
+
     const { error } = await sb.from('feedback').delete().eq('id', id);
     if (error) {
       showError('Failed to delete: ' + error.message);
@@ -1006,8 +1080,9 @@ function FeedbackTracker({ user }) {
 
   async function handleStatusChange(id, status) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, status } : i));
-    // Keep modal item in sync
     setDetailItem(prev => prev?.id === id ? { ...prev, status } : prev);
+    if (isDemo) return;
+
     const { error } = await sb.from('feedback').update({ status }).eq('id', id);
     if (error) showError('Failed to update status: ' + error.message);
   }
@@ -1015,6 +1090,8 @@ function FeedbackTracker({ user }) {
   async function handleDescriptionSave(id, content) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, content } : i));
     setDetailItem(prev => prev?.id === id ? { ...prev, content } : prev);
+    if (isDemo) return;
+
     const { error } = await sb.from('feedback').update({ content }).eq('id', id);
     if (error) showError('Failed to save description: ' + error.message);
   }
@@ -1071,174 +1148,186 @@ function FeedbackTracker({ user }) {
   }
 
   return (
-    <div style={{minHeight:'100vh',maxWidth:'780px',margin:'0 auto',padding:'40px 24px 80px'}}>
+    <div style={{minHeight:'100vh'}}>
+      {/* Demo banner — sticky, outside scroll container */}
+      {isDemo && <DemoBanner onExitDemo={onExitDemo} />}
 
-      {error && (
-        <div className="mb-6 font-mono text-xs px-4 py-3 rounded-lg flex items-center justify-between fade-up"
-          style={{background:'rgba(248,81,73,.1)',color:'var(--neg)',border:'1px solid rgba(248,81,73,.2)'}}>
-          <span>{error}</span>
-          <button onClick={() => setError('')} style={{background:'none',border:'none',cursor:'pointer',color:'inherit',fontSize:'16px',lineHeight:1}}>×</button>
-        </div>
-      )}
+      <div style={{maxWidth:'780px',margin:'0 auto',padding:'40px 24px 80px'}}>
 
-      {/* Header */}
-      <div className="flex items-start justify-between mb-2">
-        <div>
-          <h1 className="font-serif text-3xl" style={{color:'var(--text)'}}>Pulse</h1>
-          <p className="font-mono text-xs mt-0.5" style={{color:'var(--muted)'}}>feedback tracker</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button onClick={handleAIAnalysis} disabled={aiLoading || loading} className="btn-ai">
-            {aiLoading ? (
-              <svg className="spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-              </svg>
-            ) : (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-              </svg>
-            )}
-            {aiLoading ? 'Analyzing…' : 'AI Analysis'}
-            {!aiLoading && activeCount > 0 && (
-              <span className="font-mono text-[9px]" style={{background:'rgba(88,166,255,.2)',padding:'1px 5px',borderRadius:'3px'}}>{activeCount}</span>
-            )}
-          </button>
-          <span className="font-mono text-xs hidden sm:block" style={{color:'var(--muted)',maxWidth:180,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-            {user.email}
-          </span>
-          <button onClick={handleLogout} className="btn-ghost">Sign out</button>
-        </div>
-      </div>
+        {error && (
+          <div className="mb-6 font-mono text-xs px-4 py-3 rounded-lg flex items-center justify-between fade-up"
+            style={{background:'rgba(248,81,73,.1)',color:'var(--neg)',border:'1px solid rgba(248,81,73,.2)'}}>
+            <span>{error}</span>
+            <button onClick={() => setError('')} style={{background:'none',border:'none',cursor:'pointer',color:'inherit',fontSize:'16px',lineHeight:1}}>×</button>
+          </div>
+        )}
 
-      {/* Status summary */}
-      {!loading && total > 0 && (
-        <div className="flex items-center gap-3 mb-7 fade-up" style={{paddingLeft:'1px'}}>
-          {[
-            { label:'Open',        count:countOpen,       color:'var(--muted)' },
-            { label:'In Progress', count:countInProgress, color:'#d2a22a' },
-            { label:'Addressed',   count:countAddressed,  color:'var(--pos)' },
-          ].map((s, i) => (
-            <React.Fragment key={s.label}>
-              {i > 0 && <span style={{color:'var(--border-hi)',fontSize:'10px',userSelect:'none'}}>·</span>}
-              <span className="font-mono text-[10px]" style={{color:'var(--muted)'}}>
-                <span style={{color:s.color,fontWeight:500}}>{s.count}</span>{' '}{s.label}
+        {/* Header */}
+        <div className="flex items-start justify-between mb-2">
+          <div>
+            <h1 className="font-serif text-3xl" style={{color:'var(--text)'}}>Pulse</h1>
+            <p className="font-mono text-xs mt-0.5" style={{color:'var(--muted)'}}>feedback tracker</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button onClick={handleAIAnalysis} disabled={aiLoading || loading} className="btn-ai">
+              {aiLoading ? (
+                <svg className="spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                </svg>
+              ) : (
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+              )}
+              {aiLoading ? 'Analyzing…' : 'AI Analysis'}
+              {!aiLoading && activeCount > 0 && (
+                <span className="font-mono text-[9px]" style={{background:'rgba(88,166,255,.2)',padding:'1px 5px',borderRadius:'3px'}}>{activeCount}</span>
+              )}
+            </button>
+            {!isDemo && (
+              <span className="font-mono text-xs hidden sm:block" style={{color:'var(--muted)',maxWidth:180,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                {user.email}
               </span>
-            </React.Fragment>
-          ))}
+            )}
+            {isDemo ? (
+              <button onClick={onExitDemo} className="btn-exit-demo">Exit Demo</button>
+            ) : (
+              <button onClick={handleLogout} className="btn-ghost">Sign out</button>
+            )}
+          </div>
         </div>
-      )}
 
-      {/* Sentiment stats */}
-      {!loading && total > 0 && (
-        <div className="grid grid-cols-3 gap-3 mb-5 fade-up">
-          {[
-            { label:'Positive', count:pos, color:'var(--pos)', bg:'rgba(57,211,83,.07)',  border:'rgba(57,211,83,.18)' },
-            { label:'Negative', count:neg, color:'var(--neg)', bg:'rgba(248,81,73,.07)', border:'rgba(248,81,73,.18)' },
-            { label:'Neutral',  count:neu, color:'var(--neu)', bg:'rgba(88,166,255,.07)',border:'rgba(88,166,255,.18)' },
-          ].map(s => (
-            <div key={s.label} style={{background:s.bg,border:`1px solid ${s.border}`,borderRadius:'8px',padding:'12px 16px',display:'flex',alignItems:'flex-end',justifyContent:'space-between'}}>
-              <div>
-                <p className="font-mono text-xl font-500" style={{color:s.color,lineHeight:1}}>{s.count}</p>
-                <p className="font-mono text-[10px] mt-1" style={{color:'var(--muted)'}}>{s.label}</p>
+        {/* Status summary */}
+        {!loading && total > 0 && (
+          <div className="flex items-center gap-3 mb-7 fade-up" style={{paddingLeft:'1px'}}>
+            {[
+              { label:'Open',        count:countOpen,       color:'var(--muted)' },
+              { label:'In Progress', count:countInProgress, color:'#d2a22a' },
+              { label:'Addressed',   count:countAddressed,  color:'var(--pos)' },
+            ].map((s, i) => (
+              <React.Fragment key={s.label}>
+                {i > 0 && <span style={{color:'var(--border-hi)',fontSize:'10px',userSelect:'none'}}>·</span>}
+                <span className="font-mono text-[10px]" style={{color:'var(--muted)'}}>
+                  <span style={{color:s.color,fontWeight:500}}>{s.count}</span>{' '}{s.label}
+                </span>
+              </React.Fragment>
+            ))}
+          </div>
+        )}
+
+        {/* Sentiment stats */}
+        {!loading && total > 0 && (
+          <div className="grid grid-cols-3 gap-3 mb-5 fade-up">
+            {[
+              { label:'Positive', count:pos, color:'var(--pos)', bg:'rgba(57,211,83,.07)',  border:'rgba(57,211,83,.18)' },
+              { label:'Negative', count:neg, color:'var(--neg)', bg:'rgba(248,81,73,.07)', border:'rgba(248,81,73,.18)' },
+              { label:'Neutral',  count:neu, color:'var(--neu)', bg:'rgba(88,166,255,.07)',border:'rgba(88,166,255,.18)' },
+            ].map(s => (
+              <div key={s.label} style={{background:s.bg,border:`1px solid ${s.border}`,borderRadius:'8px',padding:'12px 16px',display:'flex',alignItems:'flex-end',justifyContent:'space-between'}}>
+                <div>
+                  <p className="font-mono text-xl font-500" style={{color:s.color,lineHeight:1}}>{s.count}</p>
+                  <p className="font-mono text-[10px] mt-1" style={{color:'var(--muted)'}}>{s.label}</p>
+                </div>
+                <p className="font-mono text-lg" style={{color:s.color,opacity:0.45,lineHeight:1}}>{pct(s.count)}</p>
               </div>
-              <p className="font-mono text-lg" style={{color:s.color,opacity:0.45,lineHeight:1}}>{pct(s.count)}</p>
-            </div>
-          ))}
+            ))}
+          </div>
+        )}
+
+        {/* Category Breakdown */}
+        {!loading && total > 0 && (
+          <CategoryBreakdown items={items} activeCategoryFilter={categoryFilter} onCategoryClick={handleCategoryClick} />
+        )}
+
+        {aiError && (
+          <div className="mb-5 fade-up font-mono text-xs px-4 py-3 rounded-lg flex items-center justify-between"
+            style={{background:'rgba(248,81,73,.08)',color:'var(--neg)',border:'1px solid rgba(248,81,73,.2)'}}>
+            <span>{aiError}</span>
+            <button onClick={() => setAiError('')} style={{background:'none',border:'none',cursor:'pointer',color:'inherit',fontSize:'16px',lineHeight:1}}>×</button>
+          </div>
+        )}
+
+        {aiAnalysis && <AIAnalysisPanel analysis={aiAnalysis} onDismiss={() => setAiAnalysis(null)} />}
+
+        {/* Filter row + Add button */}
+        <div className="flex items-start justify-between gap-4 mb-2">
+          <div className="flex-1 min-w-0">
+            <FilterBar
+              sentimentFilter={sentimentFilter} setSentimentFilter={setSentimentFilter}
+              statusFilter={statusFilter}       setStatusFilter={setStatusFilter}
+              sourceFilter={sourceFilter}       setSourceFilter={setSourceFilter}
+              hasActiveFilter={hasActiveFilter}
+              onClear={clearFilters}
+            />
+          </div>
+          <div className="shrink-0 pt-0.5">
+            <FeedbackForm onAdd={handleAdd} />
+          </div>
         </div>
-      )}
 
-      {/* Category Breakdown */}
-      {!loading && total > 0 && (
-        <CategoryBreakdown items={items} activeCategoryFilter={categoryFilter} onCategoryClick={handleCategoryClick} />
-      )}
-
-      {aiError && (
-        <div className="mb-5 fade-up font-mono text-xs px-4 py-3 rounded-lg flex items-center justify-between"
-          style={{background:'rgba(248,81,73,.08)',color:'var(--neg)',border:'1px solid rgba(248,81,73,.2)'}}>
-          <span>{aiError}</span>
-          <button onClick={() => setAiError('')} style={{background:'none',border:'none',cursor:'pointer',color:'inherit',fontSize:'16px',lineHeight:1}}>×</button>
-        </div>
-      )}
-
-      {aiAnalysis && <AIAnalysisPanel analysis={aiAnalysis} onDismiss={() => setAiAnalysis(null)} />}
-
-      {/* Filter row + Add button — Add is pinned top-right, never shifts */}
-      <div className="flex items-start justify-between gap-4 mb-2">
-        <div className="flex-1 min-w-0">
-          <FilterBar
-            sentimentFilter={sentimentFilter} setSentimentFilter={setSentimentFilter}
-            statusFilter={statusFilter}       setStatusFilter={setStatusFilter}
-            sourceFilter={sourceFilter}       setSourceFilter={setSourceFilter}
-            hasActiveFilter={hasActiveFilter}
-            onClear={clearFilters}
-          />
-        </div>
-        <div className="shrink-0 pt-0.5">
-          <FeedbackForm onAdd={handleAdd} />
-        </div>
-      </div>
-
-      {/* Active filter label */}
-      {hasActiveFilter && (
-        <div className="mb-4 fade-up flex items-center gap-2 flex-wrap">
-          <span className="font-mono text-[10px]" style={{color:'var(--muted)'}}>Showing:</span>
-          {sentimentFilter !== 'all' && <span className={`badge ${SENTIMENT_BADGE[sentimentFilter]}`}>{sentimentFilter}</span>}
-          {statusFilter    !== 'all' && <span className={`badge ${STATUS_BADGE[statusFilter]}`}>{STATUS_LABEL[statusFilter]}</span>}
-          {sourceFilter    !== 'all' && <span className="badge badge-source">{sourceFilter}</span>}
-          {categoryFilter  !== 'all' && (
-            <span className="badge" style={{background:CAT_BG[categoryFilter],color:CAT_COLOR[categoryFilter],border:`1px solid ${CAT_COLOR[categoryFilter]}44`}}>
-              {categoryFilter}
+        {/* Active filter label */}
+        {hasActiveFilter && (
+          <div className="mb-4 fade-up flex items-center gap-2 flex-wrap">
+            <span className="font-mono text-[10px]" style={{color:'var(--muted)'}}>Showing:</span>
+            {sentimentFilter !== 'all' && <span className={`badge ${SENTIMENT_BADGE[sentimentFilter]}`}>{sentimentFilter}</span>}
+            {statusFilter    !== 'all' && <span className={`badge ${STATUS_BADGE[statusFilter]}`}>{STATUS_LABEL[statusFilter]}</span>}
+            {sourceFilter    !== 'all' && <span className="badge badge-source">{sourceFilter}</span>}
+            {categoryFilter  !== 'all' && (
+              <span className="badge" style={{background:CAT_BG[categoryFilter],color:CAT_COLOR[categoryFilter],border:`1px solid ${CAT_COLOR[categoryFilter]}44`}}>
+                {categoryFilter}
+              </span>
+            )}
+            <span className="font-mono text-[10px]" style={{color:'var(--muted)'}}>
+              — {displayed.length} item{displayed.length !== 1 ? 's' : ''}
             </span>
-          )}
-          <span className="font-mono text-[10px]" style={{color:'var(--muted)'}}>
-            — {displayed.length} item{displayed.length !== 1 ? 's' : ''}
-          </span>
-        </div>
-      )}
+          </div>
+        )}
 
-      {/* Cards */}
-      {loading ? (
-        <div className="flex flex-col gap-3">
-          {[1,2,3].map(n => (
-            <div key={n} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:'8px',padding:'16px'}}>
-              <div className="skel h-4 mb-3" style={{width:`${60+n*10}%`}} />
-              <div className="skel h-3" style={{width:'40%'}} />
-            </div>
-          ))}
-        </div>
-      ) : displayed.length === 0 ? (
-        <div className="text-center py-20 fade-up">
-          <p className="font-serif text-2xl italic mb-2" style={{color:'var(--muted)'}}>
-            {!hasActiveFilter ? 'No feedback yet' : 'No matching feedback'}
-          </p>
-          <p className="font-mono text-xs" style={{color:'var(--muted)',opacity:.6}}>
-            {!hasActiveFilter ? 'Add your first item above.' : 'Try a different filter or clear the current one.'}
-          </p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {displayed.map(item => (
-            <FeedbackCard key={item.id} item={item} onDelete={handleDelete} onOpenDetail={setDetailItem} />
-          ))}
-        </div>
-      )}
+        {/* Cards */}
+        {loading ? (
+          <div className="flex flex-col gap-3">
+            {[1,2,3].map(n => (
+              <div key={n} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:'8px',padding:'16px'}}>
+                <div className="skel h-4 mb-3" style={{width:`${60+n*10}%`}} />
+                <div className="skel h-3" style={{width:'40%'}} />
+              </div>
+            ))}
+          </div>
+        ) : displayed.length === 0 ? (
+          <div className="text-center py-20 fade-up">
+            <p className="font-serif text-2xl italic mb-2" style={{color:'var(--muted)'}}>
+              {!hasActiveFilter ? 'No feedback yet' : 'No matching feedback'}
+            </p>
+            <p className="font-mono text-xs" style={{color:'var(--muted)',opacity:.6}}>
+              {!hasActiveFilter ? 'Add your first item above.' : 'Try a different filter or clear the current one.'}
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {displayed.map(item => (
+              <FeedbackCard key={item.id} item={item} onDelete={handleDelete} onOpenDetail={setDetailItem} />
+            ))}
+          </div>
+        )}
 
-      {/* Detail modal */}
-      {detailItem && (
-        <FeedbackDetailModal
-          item={detailItem}
-          onClose={() => setDetailItem(null)}
-          onStatusChange={handleStatusChange}
-          onDescriptionSave={handleDescriptionSave}
-        />
-      )}
+        {/* Detail modal */}
+        {detailItem && (
+          <FeedbackDetailModal
+            item={detailItem}
+            onClose={() => setDetailItem(null)}
+            onStatusChange={handleStatusChange}
+            onDescriptionSave={handleDescriptionSave}
+          />
+        )}
+      </div>
     </div>
   );
 }
 
 /* ── App ── */
 function App() {
-  const [user, setUser] = React.useState(null);
+  const [user,    setUser]    = React.useState(null);
+  const [isDemo,  setIsDemo]  = React.useState(false);
 
   React.useEffect(() => {
     sb.auth.getSession().then(({ data: { session } }) => setUser(session?.user ?? false));
@@ -1248,13 +1337,20 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  function enterDemo() { setIsDemo(true); }
+  function exitDemo()  { setIsDemo(false); }
+
+  if (isDemo) {
+    return <FeedbackTracker user={{ email: 'demo@preview' }} isDemo={true} onExitDemo={exitDemo} />;
+  }
+
   if (user === null) return (
     <div className="min-h-screen flex items-center justify-center">
       <p className="font-mono text-xs" style={{color:'var(--muted)'}}>Loading…</p>
     </div>
   );
-  if (user === false) return <AuthForm />;
-  return <FeedbackTracker user={user} />;
+  if (user === false) return <AuthForm onEnterDemo={enterDemo} />;
+  return <FeedbackTracker user={user} isDemo={false} onExitDemo={null} />;
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App />);
