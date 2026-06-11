@@ -493,9 +493,44 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no extra
   });
   
   if (error) throw new Error(error.message);
-  
+
   const text = data.choices?.[0]?.message?.content || '';
   return JSON.parse(text.replace(/```json|```/g, '').trim());
+}
+
+/* AI triage: classify a raw piece of feedback into the fixed taxonomy.
+   The model only suggests — the human confirms or overrides before saving. */
+async function runGroqClassify(text) {
+  const prompt = `You are a product feedback triage assistant. Classify the following piece of user feedback.
+
+Feedback:
+"""
+${text}
+"""
+
+Return ONLY a valid JSON object (no markdown, no extra text) with this exact structure:
+{
+  "title": "short 4-8 word summary of the feedback",
+  "sentiment": "Positive" or "Negative" or "Neutral",
+  "category": "UX" or "Performance" or "Feature Request" or "Bug" or "Other"
+}`;
+
+  const { data, error } = await sb.functions.invoke('groq-proxy', {
+    body: {
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 200,
+    },
+  });
+  if (error) throw new Error(error.message);
+
+  const raw = data.choices?.[0]?.message?.content || '';
+  const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+  return {
+    title:     typeof parsed.title === 'string' ? parsed.title.trim() : '',
+    sentiment: SENTIMENTS.includes(parsed.sentiment) ? parsed.sentiment : '',
+    category:  CATEGORIES.includes(parsed.category)  ? parsed.category  : '',
+  };
 }
 
 /* ── AI Panel ── */
@@ -676,8 +711,12 @@ function FeedbackForm({ onAdd }) {
   const [sentiment, setSentiment] = React.useState('');
   const [loading,   setLoading]   = React.useState(false);
   const [open,      setOpen]      = React.useState(false);
+  const [aiClassifying,   setAiClassifying]   = React.useState(false);
+  const [aiSuggested,     setAiSuggested]     = React.useState(false);
+  const [aiClassifyError, setAiClassifyError] = React.useState('');
 
-  const canSubmit = title.trim() && content.trim() && source && category && sentiment;
+  const canSubmit  = title.trim() && content.trim() && source && category && sentiment;
+  const canClassify = content.trim().length >= 15;
 
   async function submit(e) {
     e.preventDefault();
@@ -685,8 +724,24 @@ function FeedbackForm({ onAdd }) {
     setLoading(true);
     await onAdd({ title: title.trim(), content: content.trim(), source, category, sentiment });
     setTitle(''); setContent(''); setSource(''); setCategory(''); setSentiment('');
+    setAiSuggested(false); setAiClassifyError('');
     setLoading(false);
     setOpen(false);
+  }
+
+  async function handleClassify() {
+    if (!canClassify || aiClassifying) return;
+    setAiClassifying(true); setAiClassifyError(''); setAiSuggested(false);
+    try {
+      const s = await runGroqClassify(content.trim());
+      if (s.title && !title.trim()) setTitle(s.title);
+      if (s.sentiment) setSentiment(s.sentiment);
+      if (s.category)  setCategory(s.category);
+      setAiSuggested(true);
+    } catch (e) {
+      setAiClassifyError('Could not classify: ' + (e.message || 'unknown error'));
+    }
+    setAiClassifying(false);
   }
 
   if (!open) {
@@ -710,6 +765,31 @@ function FeedbackForm({ onAdd }) {
       </div>
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
+          <label className="font-mono text-[10px]" style={{color:'var(--muted)'}}>Description <span style={{color:'var(--neg)'}}>*</span></label>
+          <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Paste raw feedback here — AI can classify it for you…" className="ctrl" required />
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <button type="button" onClick={handleClassify} disabled={aiClassifying || !canClassify} className="btn-ai"
+            title={canClassify ? 'Let AI suggest title, sentiment, and category' : 'Write at least a sentence of feedback first'}>
+            {aiClassifying ? (
+              <svg className="spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+              </svg>
+            ) : (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+            )}
+            {aiClassifying ? 'Classifying…' : 'Auto-classify with AI'}
+          </button>
+          {aiSuggested && !aiClassifying && (
+            <span className="font-mono text-[10px] fade-up" style={{color:'#58a6ff'}}>✓ AI suggestions applied — review before saving</span>
+          )}
+          {aiClassifyError && (
+            <span className="font-mono text-[10px] fade-up" style={{color:'var(--neg)'}}>{aiClassifyError}</span>
+          )}
+        </div>
+        <div className="flex flex-col gap-1">
           <label className="font-mono text-[10px]" style={{color:'var(--muted)'}}>Title <span style={{color:'var(--neg)'}}>*</span></label>
           <input
             type="text"
@@ -719,10 +799,6 @@ function FeedbackForm({ onAdd }) {
             className="ctrl"
             required
           />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="font-mono text-[10px]" style={{color:'var(--muted)'}}>Description <span style={{color:'var(--neg)'}}>*</span></label>
-          <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Full details of the feedback…" className="ctrl" required />
         </div>
         <div className="grid grid-cols-3 gap-2">
           {[
