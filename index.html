@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pulse — Feedback Tracker</title>
+  <title>Pulse — Feedback Intelligence</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
@@ -234,6 +234,37 @@
     }
     .btn-ai:hover { background: rgba(88,166,255,.18); border-color: rgba(88,166,255,.5); }
     .btn-ai:disabled { opacity: .45; cursor: not-allowed; }
+
+    .tab-nav {
+      display: flex;
+      gap: 2px;
+      border-bottom: 1px solid var(--border-hi);
+      margin: 18px 0 26px;
+    }
+    .tab {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      padding: 10px 14px;
+      margin-bottom: -1px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: color .15s, border-color .15s;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--text); border-bottom-color: #58a6ff; }
+    .tab-count {
+      font-size: 9px;
+      background: var(--faint);
+      color: var(--muted);
+      padding: 1px 6px;
+      border-radius: 99px;
+    }
 
     .demo-banner {
       position: sticky;
@@ -1055,6 +1086,7 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
   const [aiAnalysis,      setAiAnalysis]      = React.useState(null);
   const [aiError,         setAiError]         = React.useState('');
   const [detailItem,      setDetailItem]      = React.useState(null);
+  const [view,            setView]            = React.useState('dashboard');
 
   const errTimer = React.useRef(null);
   function showError(msg) {
@@ -1125,6 +1157,7 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
   }
 
   async function handleAIAnalysis() {
+    setView('dashboard');
     setAiLoading(true); setAiError(''); setAiAnalysis(null);
     const active = items.filter(i => i.status === 'open' || i.status === 'inprogress');
     if (active.length === 0) {
@@ -1144,6 +1177,7 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
 
   function handleCategoryClick(cat) {
     setCategoryFilter(prev => prev === cat ? 'all' : cat);
+    setView('inbox');
   }
 
   function clearFilters() {
@@ -1160,6 +1194,10 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
     .filter(i => statusFilter    === 'all' || i.status    === statusFilter)
     .filter(i => sourceFilter    === 'all' || i.source    === sourceFilter)
     .filter(i => categoryFilter  === 'all' || i.category  === categoryFilter);
+
+  const recentItems = [...items]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 4);
 
   const total = items.length;
   const pos   = items.filter(i => i.sentiment === 'Positive').length;
@@ -1194,7 +1232,7 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
         <div className="flex items-start justify-between mb-2">
           <div>
             <h1 className="font-serif text-3xl" style={{color:'var(--text)'}}>Pulse</h1>
-            <p className="font-mono text-xs mt-0.5" style={{color:'var(--muted)'}}>feedback tracker</p>
+            <p className="font-mono text-xs mt-0.5" style={{color:'var(--muted)'}}>feedback intelligence</p>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={handleAIAnalysis} disabled={aiLoading || loading} className="btn-ai">
@@ -1224,6 +1262,18 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
             )}
           </div>
         </div>
+
+        {/* Tab navigation */}
+        <div className="tab-nav">
+          {[['dashboard','Dashboard'],['inbox','Inbox'],['insights','Insights']].map(([key, label]) => (
+            <button key={key} className={`tab${view === key ? ' active' : ''}`} onClick={() => setView(key)}>
+              {label}
+              {key === 'inbox' && !loading && <span className="tab-count">{total}</span>}
+            </button>
+          ))}
+        </div>
+
+        {view === 'dashboard' && (<>
 
         {/* Status summary */}
         {!loading && total > 0 && (
@@ -1262,11 +1312,6 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
           </div>
         )}
 
-        {/* Category Breakdown */}
-        {!loading && total > 0 && (
-          <CategoryBreakdown items={items} activeCategoryFilter={categoryFilter} onCategoryClick={handleCategoryClick} />
-        )}
-
         {aiError && (
           <div className="mb-5 fade-up font-mono text-xs px-4 py-3 rounded-lg flex items-center justify-between"
             style={{background:'rgba(248,81,73,.08)',color:'var(--neg)',border:'1px solid rgba(248,81,73,.2)'}}>
@@ -1275,7 +1320,76 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
           </div>
         )}
 
+        {aiLoading && (
+          <div className="fade-up mb-6 flex items-center gap-3" style={{background:'var(--surface)',border:'1px solid rgba(88,166,255,.3)',borderLeft:'3px solid #58a6ff',borderRadius:'10px',padding:'18px 20px'}}>
+            <svg className="spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" strokeWidth="2.5">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+            <span className="font-mono text-xs" style={{color:'#58a6ff'}}>Analyzing {activeCount} active feedback items…</span>
+          </div>
+        )}
+
         {aiAnalysis && <AIAnalysisPanel analysis={aiAnalysis} onDismiss={() => setAiAnalysis(null)} />}
+
+        {!aiAnalysis && !aiLoading && !aiError && !loading && total > 0 && (
+          <div className="fade-up mb-6 flex items-center justify-between gap-4 flex-wrap" style={{background:'rgba(88,166,255,.04)',border:'1px dashed rgba(88,166,255,.3)',borderRadius:'10px',padding:'16px 20px'}}>
+            <div>
+              <p className="font-sans text-sm font-500" style={{color:'var(--text)'}}>What should the team fix first?</p>
+              <p className="font-mono text-[11px] mt-1" style={{color:'var(--muted)'}}>Run AI analysis over {activeCount} active items to get a ranked, reasoned priority list.</p>
+            </div>
+            <button onClick={handleAIAnalysis} className="btn-ai shrink-0">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+              Run analysis
+            </button>
+          </div>
+        )}
+
+        {/* Category Breakdown */}
+        {!loading && total > 0 && (
+          <CategoryBreakdown items={items} activeCategoryFilter={categoryFilter} onCategoryClick={handleCategoryClick} />
+        )}
+
+        {/* Recent feedback */}
+        {!loading && total > 0 && (
+          <div className="fade-up">
+            <div className="flex items-center justify-between mb-3">
+              <p className="font-mono text-[10px] uppercase tracking-wider" style={{color:'var(--muted)'}}>— Recent Feedback</p>
+              <button onClick={() => setView('inbox')} className="font-mono text-[11px]" style={{background:'none',border:'none',cursor:'pointer',color:'#58a6ff',padding:0}}>
+                Open inbox →
+              </button>
+            </div>
+            <div className="flex flex-col gap-3">
+              {recentItems.map(item => (
+                <FeedbackCard key={item.id} item={item} onDelete={handleDelete} onOpenDetail={setDetailItem} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {loading && (
+          <div className="flex flex-col gap-3">
+            {[1,2,3].map(n => (
+              <div key={n} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:'8px',padding:'16px'}}>
+                <div className="skel h-4 mb-3" style={{width:`${60+n*10}%`}} />
+                <div className="skel h-3" style={{width:'40%'}} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!loading && total === 0 && (
+          <div className="text-center py-20 fade-up">
+            <p className="font-serif text-2xl italic mb-2" style={{color:'var(--muted)'}}>No feedback yet</p>
+            <p className="font-mono text-xs mb-5" style={{color:'var(--muted)',opacity:.6}}>Head to the inbox to log your first item.</p>
+            <button onClick={() => setView('inbox')} className="btn-primary text-sm">Go to Inbox</button>
+          </div>
+        )}
+
+        </>)}
+
+        {view === 'inbox' && (<>
 
         {/* Filter row + Add button */}
         <div className="flex items-start justify-between gap-4 mb-2">
@@ -1335,6 +1449,15 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
             {displayed.map(item => (
               <FeedbackCard key={item.id} item={item} onDelete={handleDelete} onOpenDetail={setDetailItem} />
             ))}
+          </div>
+        )}
+
+        </>)}
+
+        {view === 'insights' && (
+          <div className="text-center py-20 fade-up">
+            <p className="font-serif text-2xl italic mb-2" style={{color:'var(--muted)'}}>Insights</p>
+            <p className="font-mono text-xs" style={{color:'var(--muted)',opacity:.6}}>Trend analytics coming in the next iteration.</p>
           </div>
         )}
 
