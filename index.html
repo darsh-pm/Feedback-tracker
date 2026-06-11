@@ -1500,7 +1500,10 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
   const [aiAnalysis,      setAiAnalysis]      = React.useState(null);
   const [aiError,         setAiError]         = React.useState('');
   const [detailItem,      setDetailItem]      = React.useState(null);
-  const [view,            setView]            = React.useState('dashboard');
+  const [view,            setView]            = React.useState(() => {
+    const v = new URLSearchParams(window.location.search).get('view');
+    return ['dashboard', 'inbox', 'insights'].includes(v) ? v : 'dashboard';
+  });
   const [searchQuery,     setSearchQuery]     = React.useState('');
   const [sortBy,          setSortBy]          = React.useState('newest');
   const [selectMode,      setSelectMode]      = React.useState(false);
@@ -2030,7 +2033,9 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
 /* ── App ── */
 function App() {
   const [user,    setUser]    = React.useState(null);
-  const [isDemo,  setIsDemo]  = React.useState(false);
+  // ?demo=1 deep-links straight into demo mode — used by the portfolio so a
+  // visitor lands inside the product instead of on the auth screen.
+  const [isDemo,  setIsDemo]  = React.useState(() => new URLSearchParams(window.location.search).get('demo') === '1');
 
   React.useEffect(() => {
     sb.auth.getSession().then(({ data: { session } }) => setUser(session?.user ?? false));
@@ -2041,7 +2046,10 @@ function App() {
   }, []);
 
   function enterDemo() { setIsDemo(true); }
-  function exitDemo()  { setIsDemo(false); }
+  function exitDemo()  {
+    setIsDemo(false);
+    if (window.location.search) window.history.replaceState(null, '', window.location.pathname);
+  }
 
   if (isDemo) {
     return <FeedbackTracker user={{ email: 'demo@preview' }} isDemo={true} onExitDemo={exitDemo} />;
