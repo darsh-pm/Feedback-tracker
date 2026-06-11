@@ -281,6 +281,9 @@
     .btn-soft.active { color: #58a6ff; border-color: rgba(88,166,255,.55); background: rgba(88,166,255,.08); }
     .btn-soft:disabled { opacity: .45; cursor: not-allowed; }
 
+    .ai-evidence { cursor: pointer; transition: border-color .15s, transform .12s; }
+    .ai-evidence:hover { border-color: rgba(88,166,255,.5) !important; transform: translateY(-1px); }
+
     .demo-banner {
       position: sticky;
       top: 0;
@@ -446,6 +449,25 @@ function fmtDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function fmtRelative(iso) {
+  if (!iso) return '';
+  const s = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (s < 60) return 'just now';
+  const m = Math.floor(s / 60); if (m < 60) return m + 'm ago';
+  const h = Math.floor(m / 60); if (h < 24) return h + 'h ago';
+  return Math.floor(h / 24) + 'd ago';
+}
+
+/* Fingerprint of the active (open/in-progress) set — used to detect
+   when an AI analysis has gone stale because feedback changed. */
+function activeSignature(items) {
+  return items
+    .filter(i => i.status === 'open' || i.status === 'inprogress')
+    .map(i => `${i.id}:${i.status}`)
+    .sort()
+    .join('|');
+}
+
 function rowToItem(r) {
   return {
     id: r.id, createdAt: r.created_at, userId: r.user_id,
@@ -456,8 +478,7 @@ function rowToItem(r) {
 }
 
 /* ── Groq ── */
-async function runGroqAnalysis(items) {
-  const activeItems = items.filter(i => i.status === 'open' || i.status === 'inprogress');
+async function runGroqAnalysis(activeItems) {
   if (activeItems.length === 0) return null;
 
   const formatted = activeItems.map((item, idx) =>
@@ -534,7 +555,7 @@ Return ONLY a valid JSON object (no markdown, no extra text) with this exact str
 }
 
 /* ── AI Panel ── */
-function AIAnalysisPanel({ analysis, onDismiss }) {
+function AIAnalysisPanel({ analysis, analyzedAt, itemCount, isStale, onDismiss, onRerun, onOpenItem }) {
   if (!analysis) return null;
   const sevColor  = { high: 'var(--neg)', medium: '#d2a22a', low: 'var(--neu)' };
   const sevBg     = { high: 'rgba(248,81,73,.08)', medium: 'rgba(210,153,34,.08)', low: 'rgba(88,166,255,.08)' };
@@ -545,14 +566,28 @@ function AIAnalysisPanel({ analysis, onDismiss }) {
       background:'var(--surface)', border:'1px solid rgba(88,166,255,.3)',
       borderRadius:'10px', padding:'20px', borderLeft:'3px solid #58a6ff',
     }}>
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
           </svg>
           <span className="font-mono text-xs font-500" style={{color:'#58a6ff'}}>AI ANALYSIS</span>
         </div>
-        <button onClick={onDismiss} style={{background:'none',border:'none',cursor:'pointer',color:'var(--muted)',fontSize:'18px',lineHeight:1,padding:'0 4px'}}>×</button>
+        <button onClick={onDismiss} title="Dismiss and clear this analysis" style={{background:'none',border:'none',cursor:'pointer',color:'var(--muted)',fontSize:'18px',lineHeight:1,padding:'0 4px'}}>×</button>
+      </div>
+
+      <div className="flex items-center gap-2.5 mb-5 flex-wrap">
+        <span className="font-mono text-[10px]" style={{color:'var(--muted)'}}>
+          Analyzed {itemCount} active item{itemCount === 1 ? '' : 's'} · {fmtRelative(analyzedAt)}
+        </span>
+        {isStale && (
+          <span className="badge badge-inprogress fade-up">Stale — feedback changed since this run</span>
+        )}
+        {isStale && (
+          <button onClick={onRerun} className="font-mono text-[10px]" style={{background:'none',border:'none',cursor:'pointer',color:'#58a6ff',textDecoration:'underline',textUnderlineOffset:'2px',padding:0}}>
+            Re-run analysis
+          </button>
+        )}
       </div>
 
       {analysis.summary && (
@@ -567,13 +602,15 @@ function AIAnalysisPanel({ analysis, onDismiss }) {
             <p className="font-mono text-[10px] mb-3 uppercase tracking-wider" style={{color:'var(--neg)'}}>— Prioritize First</p>
             <div className="flex flex-col gap-2">
               {analysis.prioritized.map((p, i) => (
-                <div key={i} style={{background:'rgba(248,81,73,.05)',border:'1px solid rgba(248,81,73,.15)',borderRadius:'6px',padding:'10px 12px'}}>
+                <div key={i} className="ai-evidence" onClick={() => onOpenItem(p.feedbackIndex)} title="Open the underlying feedback"
+                  style={{background:'rgba(248,81,73,.05)',border:'1px solid rgba(248,81,73,.15)',borderRadius:'6px',padding:'10px 12px'}}>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-mono text-[10px]" style={{color:'var(--neg)',background:'rgba(248,81,73,.15)',padding:'1px 6px',borderRadius:'3px'}}>#{p.rank}</span>
                     <span className="font-sans text-sm font-500" style={{color:'var(--text)'}}>{p.title}</span>
                     {p.category && <span className="badge badge-category">{p.category}</span>}
                   </div>
                   <p className="font-sans text-xs leading-relaxed" style={{color:'var(--muted)'}}>{p.reason}</p>
+                  <p className="font-mono text-[9px] mt-1.5" style={{color:'rgba(88,166,255,.75)'}}>view source feedback →</p>
                 </div>
               ))}
             </div>
@@ -585,9 +622,11 @@ function AIAnalysisPanel({ analysis, onDismiss }) {
             <p className="font-mono text-[10px] mb-3 uppercase tracking-wider" style={{color:'var(--muted)'}}>— Can Wait</p>
             <div className="flex flex-col gap-2">
               {analysis.canWait.map((c, i) => (
-                <div key={i} style={{background:'rgba(125,133,144,.06)',border:'1px solid var(--border)',borderRadius:'6px',padding:'10px 12px'}}>
+                <div key={i} className="ai-evidence" onClick={() => onOpenItem(c.feedbackIndex)} title="Open the underlying feedback"
+                  style={{background:'rgba(125,133,144,.06)',border:'1px solid var(--border)',borderRadius:'6px',padding:'10px 12px'}}>
                   <p className="font-sans text-sm font-500 mb-1" style={{color:'var(--text)'}}>{c.title}</p>
                   <p className="font-sans text-xs leading-relaxed" style={{color:'var(--muted)'}}>{c.reason}</p>
+                  <p className="font-mono text-[9px] mt-1.5" style={{color:'rgba(88,166,255,.75)'}}>view source feedback →</p>
                 </div>
               ))}
             </div>
@@ -1209,6 +1248,18 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
     errTimer.current = setTimeout(() => setError(''), 4000);
   }
 
+  const analysisKey = 'pulse:analysis:' + (isDemo ? 'demo' : user.id);
+
+  React.useEffect(() => {
+    try {
+      const raw = localStorage.getItem(analysisKey);
+      if (raw) {
+        const rec = JSON.parse(raw);
+        if (rec && rec.result && rec.itemIds) setAiAnalysis(rec);
+      }
+    } catch (_) { /* corrupt record — start fresh */ }
+  }, []);
+
   React.useEffect(() => {
     if (isDemo) return; // skip DB fetch in demo
     (async () => {
@@ -1272,19 +1323,39 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
 
   async function handleAIAnalysis() {
     setView('dashboard');
-    setAiLoading(true); setAiError(''); setAiAnalysis(null);
+    setAiLoading(true); setAiError('');
     const active = items.filter(i => i.status === 'open' || i.status === 'inprogress');
     if (active.length === 0) {
       setAiError('No open or in-progress feedback to analyze.');
       setAiLoading(false); return;
     }
     try {
-      const result = await runGroqAnalysis(items);
-      setAiAnalysis(result);
+      const result = await runGroqAnalysis(active);
+      const record = {
+        result,
+        itemIds:    active.map(i => i.id),
+        itemCount:  active.length,
+        analyzedAt: new Date().toISOString(),
+        snapshot:   activeSignature(items),
+      };
+      setAiAnalysis(record);
+      try { localStorage.setItem(analysisKey, JSON.stringify(record)); } catch (_) {}
     } catch (e) {
       setAiError('AI analysis failed: ' + (e.message || 'Unknown error'));
     }
     setAiLoading(false);
+  }
+
+  function dismissAnalysis() {
+    setAiAnalysis(null);
+    try { localStorage.removeItem(analysisKey); } catch (_) {}
+  }
+
+  function openAnalysisItem(feedbackIndex) {
+    if (!aiAnalysis || !feedbackIndex) return;
+    const id = aiAnalysis.itemIds[feedbackIndex - 1];
+    const target = items.find(i => i.id === id);
+    if (target) setDetailItem(target);
   }
 
   async function handleLogout() { await sb.auth.signOut(); }
@@ -1477,7 +1548,17 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
           </div>
         )}
 
-        {aiAnalysis && <AIAnalysisPanel analysis={aiAnalysis} onDismiss={() => setAiAnalysis(null)} />}
+        {aiAnalysis && !aiLoading && (
+          <AIAnalysisPanel
+            analysis={aiAnalysis.result}
+            analyzedAt={aiAnalysis.analyzedAt}
+            itemCount={aiAnalysis.itemCount}
+            isStale={!loading && activeSignature(items) !== aiAnalysis.snapshot}
+            onDismiss={dismissAnalysis}
+            onRerun={handleAIAnalysis}
+            onOpenItem={openAnalysisItem}
+          />
+        )}
 
         {!aiAnalysis && !aiLoading && !aiError && !loading && total > 0 && (
           <div className="fade-up mb-6 flex items-center justify-between gap-4 flex-wrap" style={{background:'rgba(88,166,255,.04)',border:'1px dashed rgba(88,166,255,.3)',borderRadius:'10px',padding:'16px 20px'}}>
