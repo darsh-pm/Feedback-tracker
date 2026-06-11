@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pulse — Feedback Tracker</title>
+  <title>Pulse — Feedback Intelligence</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
@@ -235,6 +235,55 @@
     .btn-ai:hover { background: rgba(88,166,255,.18); border-color: rgba(88,166,255,.5); }
     .btn-ai:disabled { opacity: .45; cursor: not-allowed; }
 
+    .tab-nav {
+      display: flex;
+      gap: 2px;
+      border-bottom: 1px solid var(--border-hi);
+      margin: 18px 0 26px;
+    }
+    .tab {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      padding: 10px 14px;
+      margin-bottom: -1px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: color .15s, border-color .15s;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--text); border-bottom-color: #58a6ff; }
+    .tab-count {
+      font-size: 9px;
+      background: var(--faint);
+      color: var(--muted);
+      padding: 1px 6px;
+      border-radius: 99px;
+    }
+
+    .btn-soft {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border-hi);
+      border-radius: 6px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s, background .15s;
+    }
+    .btn-soft:hover { color: var(--text); border-color: #58a6ff; background: rgba(88,166,255,.06); }
+    .btn-soft.active { color: #58a6ff; border-color: rgba(88,166,255,.55); background: rgba(88,166,255,.08); }
+    .btn-soft:disabled { opacity: .45; cursor: not-allowed; }
+
+    .ai-evidence { cursor: pointer; transition: border-color .15s, transform .12s; }
+    .ai-evidence:hover { border-color: rgba(88,166,255,.5) !important; transform: translateY(-1px); }
+
     .demo-banner {
       position: sticky;
       top: 0;
@@ -357,19 +406,66 @@ const CAT_BG = {
   'Other':           'rgba(148,163,184,.08)',
 };
 
+/* Demo dates are generated relative to "now" so trend charts and the
+   AI analysis always have ~10 weeks of fresh-looking history. */
+const DAY_MS = 24 * 3600 * 1000;
+const demoDate = (daysAgo, hour = 0) => new Date(Date.now() - daysAgo * DAY_MS - hour * 3600 * 1000).toISOString();
+
 const DEMO_ITEMS = [
-  { id: 'f1', createdAt: '2026-05-01T10:00:00Z', userId: 'demo', title: 'Onboarding feels overwhelming', content: 'New users are dropping off at step 3 of onboarding. The number of required fields is too high for a first-time setup.', source: 'User Interview', category: 'UX', sentiment: 'Negative', status: 'open' },
-  { id: 'f2', createdAt: '2026-05-03T11:00:00Z', userId: 'demo', title: 'Export to CSV is a must-have', content: 'Multiple enterprise customers have requested the ability to export their data to CSV for reporting purposes.', source: 'Support Ticket', category: 'Feature Request', sentiment: 'Neutral', status: 'open' },
-  { id: 'f3', createdAt: '2026-05-05T09:00:00Z', userId: 'demo', title: 'Dashboard loads slowly', content: 'On datasets larger than 500 rows the dashboard takes 8-10 seconds to render. Unacceptable for daily use.', source: 'App Review', category: 'Performance', sentiment: 'Negative', status: 'inprogress' },
-  { id: 'f4', createdAt: '2026-05-07T14:00:00Z', userId: 'demo', title: 'Love the new filter system', content: 'The multi-filter update is excellent. Being able to combine sentiment and source filters saves a lot of time.', source: 'User Interview', category: 'UX', sentiment: 'Positive', status: 'addressed' },
-  { id: 'f5', createdAt: '2026-05-10T08:00:00Z', userId: 'demo', title: 'Bulk status update needed', content: 'When triaging 50+ feedback items, updating status one by one is tedious. A bulk select and update would help.', source: 'Survey', category: 'Feature Request', sentiment: 'Neutral', status: 'open' },
-  { id: 'f6', createdAt: '2026-05-12T16:00:00Z', userId: 'demo', title: 'Search crashes on special characters', content: 'Typing & or % in the search box throws a console error and breaks the results list. Reproducible 100% of the time.', source: 'Support Ticket', category: 'Bug', sentiment: 'Negative', status: 'inprogress' },
-  { id: 'f7', createdAt: '2026-05-14T10:30:00Z', userId: 'demo', title: 'AI summary is surprisingly accurate', content: 'Used the AI analysis feature for the first time. The pain point identification was spot on. Will use this weekly.', source: 'App Review', category: 'Feature Request', sentiment: 'Positive', status: 'addressed' },
+  { id: 'p1',  createdAt: demoDate(1, 3),   userId: 'demo', title: 'Dashboard times out on large workspaces', content: 'Since the last release, workspaces with 1,000+ items hit a timeout when the dashboard loads. Three enterprise accounts reported it this week.', source: 'Support Ticket', category: 'Performance', sentiment: 'Negative', status: 'open' },
+  { id: 'p2',  createdAt: demoDate(2, 7),   userId: 'demo', title: 'Exports take forever to generate', content: 'A simple monthly export took 4 minutes today. It used to be near-instant. Makes end-of-month reporting painful.', source: 'Support Ticket', category: 'Performance', sentiment: 'Negative', status: 'open' },
+  { id: 'p3',  createdAt: demoDate(3, 2),   userId: 'demo', title: 'Would pay extra for priority support', content: 'Power user said they would happily move to a higher tier if it came with faster support response and early access to new features.', source: 'User Interview', category: 'Other', sentiment: 'Positive', status: 'open' },
+  { id: 'p4',  createdAt: demoDate(4, 9),   userId: 'demo', title: 'App feels sluggish after the latest update', content: 'Scrolling and switching tabs visibly lag since v2.4. On older laptops it is bad enough that I avoid opening the app.', source: 'App Review', category: 'Performance', sentiment: 'Negative', status: 'open' },
+  { id: 'p5',  createdAt: demoDate(5, 5),   userId: 'demo', title: 'Quarterly review needs raw data export', content: 'Customer prepares a quarterly business review and has to copy numbers out by hand. Raw CSV export of feedback data would save them hours.', source: 'User Interview', category: 'Feature Request', sentiment: 'Neutral', status: 'open' },
+  { id: 'p6',  createdAt: demoDate(6, 11),  userId: 'demo', title: 'Search results take 5+ seconds', content: 'Searching any keyword takes five seconds or more to return results. Engineering confirmed a missing index; fix is in progress.', source: 'Support Ticket', category: 'Performance', sentiment: 'Negative', status: 'inprogress' },
+  { id: 'p7',  createdAt: demoDate(8, 4),   userId: 'demo', title: 'Support team resolved my issue in minutes', content: 'Hit a billing problem and support sorted it on the first reply. Genuinely impressed with the response time.', source: 'Survey', category: 'Other', sentiment: 'Positive', status: 'addressed' },
+  { id: 'p8',  createdAt: demoDate(9, 8),   userId: 'demo', title: 'Dark mode flashes white on load', content: 'Every page load in dark mode flashes a white screen for half a second. Minor but jarring, especially at night.', source: 'App Review', category: 'Bug', sentiment: 'Negative', status: 'open' },
+  { id: 'p9',  createdAt: demoDate(12, 6),  userId: 'demo', title: 'CSV export requested again by enterprise account', content: 'Second enterprise account this month asking for CSV export to feed their BI pipeline. They currently scrape the dashboard manually.', source: 'Support Ticket', category: 'Feature Request', sentiment: 'Neutral', status: 'open' },
+  { id: 'p10', createdAt: demoDate(13, 10), userId: 'demo', title: 'Slow loading on mobile', content: 'On 4G the mobile dashboard takes 8-10 seconds before anything is interactive. Most field users just give up.', source: 'Survey', category: 'Performance', sentiment: 'Negative', status: 'open' },
+  { id: 'p11', createdAt: demoDate(15, 3),  userId: 'demo', title: 'Keyboard shortcuts are a game changer', content: 'The new shortcut set makes triage twice as fast. j/k navigation plus quick status keys is exactly right.', source: 'App Review', category: 'UX', sentiment: 'Positive', status: 'addressed' },
+  { id: 'p12', createdAt: demoDate(17, 7),  userId: 'demo', title: 'Duplicate notifications on mention', content: 'Getting two or three identical notifications for a single @mention. Started about two weeks ago.', source: 'App Review', category: 'Bug', sentiment: 'Negative', status: 'open' },
+  { id: 'p13', createdAt: demoDate(20, 5),  userId: 'demo', title: 'New onboarding flow is much smoother', content: 'Tried the reworked signup with a new teammate — down from ten fields to three, and the sample workspace makes the first session useful.', source: 'User Interview', category: 'UX', sentiment: 'Positive', status: 'addressed' },
+  { id: 'p14', createdAt: demoDate(22, 9),  userId: 'demo', title: 'Docs are outdated for API v2', content: 'The API reference still documents v1 endpoints. Two integration partners hit breaking differences this sprint.', source: 'Support Ticket', category: 'Other', sentiment: 'Negative', status: 'inprogress' },
+  { id: 'p15', createdAt: demoDate(24, 4),  userId: 'demo', title: 'Dashboard loads slowly on big datasets', content: 'On datasets larger than 500 rows the dashboard takes 8-10 seconds to render. Unacceptable for daily use.', source: 'App Review', category: 'Performance', sentiment: 'Negative', status: 'inprogress' },
+  { id: 'p16', createdAt: demoDate(26, 8),  userId: 'demo', title: 'Webhook payloads missing timestamp', content: 'Outgoing webhooks omit the event timestamp, so consumers cannot order events reliably. Fixed in the latest patch.', source: 'Support Ticket', category: 'Bug', sentiment: 'Negative', status: 'addressed' },
+  { id: 'p17', createdAt: demoDate(28, 6),  userId: 'demo', title: 'AI summary is surprisingly accurate', content: 'Used the AI analysis feature for the first time. The pain point identification was spot on. Will make this a weekly ritual.', source: 'App Review', category: 'Feature Request', sentiment: 'Positive', status: 'addressed' },
+  { id: 'p18', createdAt: demoDate(30, 10), userId: 'demo', title: 'Search crashes on special characters', content: 'Typing & or % in the search box throws a console error and breaks the results list. Reproducible 100% of the time.', source: 'Support Ticket', category: 'Bug', sentiment: 'Negative', status: 'inprogress' },
+  { id: 'p19', createdAt: demoDate(33, 5),  userId: 'demo', title: 'Need scheduled email reports', content: 'Manager wants a weekly digest of new feedback in their inbox instead of logging in. Asked twice this quarter.', source: 'Survey', category: 'Feature Request', sentiment: 'Neutral', status: 'open' },
+  { id: 'p20', createdAt: demoDate(36, 7),  userId: 'demo', title: 'Love the new filter system', content: 'The multi-filter update is excellent. Being able to combine sentiment and source filters saves a lot of time during triage.', source: 'User Interview', category: 'UX', sentiment: 'Positive', status: 'addressed' },
+  { id: 'p21', createdAt: demoDate(38, 3),  userId: 'demo', title: 'Confusing empty state on reports page', content: 'New users land on an empty reports page with no explanation of how to populate it. Two of five test users got stuck there.', source: 'User Interview', category: 'UX', sentiment: 'Negative', status: 'addressed' },
+  { id: 'p22', createdAt: demoDate(40, 9),  userId: 'demo', title: 'Bulk status update needed', content: 'When triaging 50+ feedback items, updating status one by one is tedious. A bulk select and update would help.', source: 'Survey', category: 'Feature Request', sentiment: 'Neutral', status: 'addressed' },
+  { id: 'p23', createdAt: demoDate(44, 6),  userId: 'demo', title: 'Password reset email never arrives', content: 'Multiple users on corporate domains never received reset emails. Root cause was an SPF record issue — resolved.', source: 'Support Ticket', category: 'Bug', sentiment: 'Negative', status: 'addressed' },
+  { id: 'p24', createdAt: demoDate(47, 8),  userId: 'demo', title: 'Pricing is fair for the value', content: 'Compared three alternatives during renewal and stayed. The per-seat price is reasonable for what the team gets out of it.', source: 'Survey', category: 'Other', sentiment: 'Positive', status: 'addressed' },
+  { id: 'p25', createdAt: demoDate(50, 4),  userId: 'demo', title: 'Slack integration would help triage', content: 'Team lives in Slack; piping new feedback into a channel with quick actions would shorten our response loop.', source: 'User Interview', category: 'Feature Request', sentiment: 'Neutral', status: 'open' },
+  { id: 'p26', createdAt: demoDate(52, 10), userId: 'demo', title: 'Cannot skip the product tour', content: 'The mandatory tour blocks the whole screen and cannot be dismissed. Returning users found it patronising.', source: 'Support Ticket', category: 'UX', sentiment: 'Negative', status: 'addressed' },
+  { id: 'p27', createdAt: demoDate(55, 5),  userId: 'demo', title: 'Export to CSV is a must-have', content: 'Multiple enterprise customers have requested the ability to export their data to CSV for reporting purposes.', source: 'Support Ticket', category: 'Feature Request', sentiment: 'Neutral', status: 'open' },
+  { id: 'p28', createdAt: demoDate(58, 7),  userId: 'demo', title: 'Too many required fields at signup', content: 'Survey of churned trials: the most common complaint was the ten required fields before reaching the product.', source: 'Survey', category: 'UX', sentiment: 'Negative', status: 'addressed' },
+  { id: 'p29', createdAt: demoDate(61, 9),  userId: 'demo', title: 'Mobile app when?', content: 'Recurring app store question — users want a native mobile app, or at least a usable mobile web experience.', source: 'App Review', category: 'Feature Request', sentiment: 'Neutral', status: 'open' },
+  { id: 'p30', createdAt: demoDate(64, 6),  userId: 'demo', title: 'Onboarding feels overwhelming', content: 'New users are dropping off at step 3 of onboarding. The number of required fields is too high for a first-time setup.', source: 'User Interview', category: 'UX', sentiment: 'Negative', status: 'addressed' },
 ];
 
 function fmtDate(iso) {
   if (!iso) return '';
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function fmtRelative(iso) {
+  if (!iso) return '';
+  const s = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (s < 60) return 'just now';
+  const m = Math.floor(s / 60); if (m < 60) return m + 'm ago';
+  const h = Math.floor(m / 60); if (h < 24) return h + 'h ago';
+  return Math.floor(h / 24) + 'd ago';
+}
+
+/* Fingerprint of the active (open/in-progress) set — used to detect
+   when an AI analysis has gone stale because feedback changed. */
+function activeSignature(items) {
+  return items
+    .filter(i => i.status === 'open' || i.status === 'inprogress')
+    .map(i => `${i.id}:${i.status}`)
+    .sort()
+    .join('|');
 }
 
 function rowToItem(r) {
@@ -382,8 +478,7 @@ function rowToItem(r) {
 }
 
 /* ── Groq ── */
-async function runGroqAnalysis(items) {
-  const activeItems = items.filter(i => i.status === 'open' || i.status === 'inprogress');
+async function runGroqAnalysis(activeItems) {
   if (activeItems.length === 0) return null;
 
   const formatted = activeItems.map((item, idx) =>
@@ -419,13 +514,48 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no extra
   });
   
   if (error) throw new Error(error.message);
-  
+
   const text = data.choices?.[0]?.message?.content || '';
   return JSON.parse(text.replace(/```json|```/g, '').trim());
 }
 
+/* AI triage: classify a raw piece of feedback into the fixed taxonomy.
+   The model only suggests — the human confirms or overrides before saving. */
+async function runGroqClassify(text) {
+  const prompt = `You are a product feedback triage assistant. Classify the following piece of user feedback.
+
+Feedback:
+"""
+${text}
+"""
+
+Return ONLY a valid JSON object (no markdown, no extra text) with this exact structure:
+{
+  "title": "short 4-8 word summary of the feedback",
+  "sentiment": "Positive" or "Negative" or "Neutral",
+  "category": "UX" or "Performance" or "Feature Request" or "Bug" or "Other"
+}`;
+
+  const { data, error } = await sb.functions.invoke('groq-proxy', {
+    body: {
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 200,
+    },
+  });
+  if (error) throw new Error(error.message);
+
+  const raw = data.choices?.[0]?.message?.content || '';
+  const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+  return {
+    title:     typeof parsed.title === 'string' ? parsed.title.trim() : '',
+    sentiment: SENTIMENTS.includes(parsed.sentiment) ? parsed.sentiment : '',
+    category:  CATEGORIES.includes(parsed.category)  ? parsed.category  : '',
+  };
+}
+
 /* ── AI Panel ── */
-function AIAnalysisPanel({ analysis, onDismiss }) {
+function AIAnalysisPanel({ analysis, analyzedAt, itemCount, isStale, onDismiss, onRerun, onOpenItem }) {
   if (!analysis) return null;
   const sevColor  = { high: 'var(--neg)', medium: '#d2a22a', low: 'var(--neu)' };
   const sevBg     = { high: 'rgba(248,81,73,.08)', medium: 'rgba(210,153,34,.08)', low: 'rgba(88,166,255,.08)' };
@@ -436,14 +566,28 @@ function AIAnalysisPanel({ analysis, onDismiss }) {
       background:'var(--surface)', border:'1px solid rgba(88,166,255,.3)',
       borderRadius:'10px', padding:'20px', borderLeft:'3px solid #58a6ff',
     }}>
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
           </svg>
           <span className="font-mono text-xs font-500" style={{color:'#58a6ff'}}>AI ANALYSIS</span>
         </div>
-        <button onClick={onDismiss} style={{background:'none',border:'none',cursor:'pointer',color:'var(--muted)',fontSize:'18px',lineHeight:1,padding:'0 4px'}}>×</button>
+        <button onClick={onDismiss} title="Dismiss and clear this analysis" style={{background:'none',border:'none',cursor:'pointer',color:'var(--muted)',fontSize:'18px',lineHeight:1,padding:'0 4px'}}>×</button>
+      </div>
+
+      <div className="flex items-center gap-2.5 mb-5 flex-wrap">
+        <span className="font-mono text-[10px]" style={{color:'var(--muted)'}}>
+          Analyzed {itemCount} active item{itemCount === 1 ? '' : 's'} · {fmtRelative(analyzedAt)}
+        </span>
+        {isStale && (
+          <span className="badge badge-inprogress fade-up">Stale — feedback changed since this run</span>
+        )}
+        {isStale && (
+          <button onClick={onRerun} className="font-mono text-[10px]" style={{background:'none',border:'none',cursor:'pointer',color:'#58a6ff',textDecoration:'underline',textUnderlineOffset:'2px',padding:0}}>
+            Re-run analysis
+          </button>
+        )}
       </div>
 
       {analysis.summary && (
@@ -458,13 +602,15 @@ function AIAnalysisPanel({ analysis, onDismiss }) {
             <p className="font-mono text-[10px] mb-3 uppercase tracking-wider" style={{color:'var(--neg)'}}>— Prioritize First</p>
             <div className="flex flex-col gap-2">
               {analysis.prioritized.map((p, i) => (
-                <div key={i} style={{background:'rgba(248,81,73,.05)',border:'1px solid rgba(248,81,73,.15)',borderRadius:'6px',padding:'10px 12px'}}>
+                <div key={i} className="ai-evidence" onClick={() => onOpenItem(p.feedbackIndex)} title="Open the underlying feedback"
+                  style={{background:'rgba(248,81,73,.05)',border:'1px solid rgba(248,81,73,.15)',borderRadius:'6px',padding:'10px 12px'}}>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-mono text-[10px]" style={{color:'var(--neg)',background:'rgba(248,81,73,.15)',padding:'1px 6px',borderRadius:'3px'}}>#{p.rank}</span>
                     <span className="font-sans text-sm font-500" style={{color:'var(--text)'}}>{p.title}</span>
                     {p.category && <span className="badge badge-category">{p.category}</span>}
                   </div>
                   <p className="font-sans text-xs leading-relaxed" style={{color:'var(--muted)'}}>{p.reason}</p>
+                  <p className="font-mono text-[9px] mt-1.5" style={{color:'rgba(88,166,255,.75)'}}>view source feedback →</p>
                 </div>
               ))}
             </div>
@@ -476,9 +622,11 @@ function AIAnalysisPanel({ analysis, onDismiss }) {
             <p className="font-mono text-[10px] mb-3 uppercase tracking-wider" style={{color:'var(--muted)'}}>— Can Wait</p>
             <div className="flex flex-col gap-2">
               {analysis.canWait.map((c, i) => (
-                <div key={i} style={{background:'rgba(125,133,144,.06)',border:'1px solid var(--border)',borderRadius:'6px',padding:'10px 12px'}}>
+                <div key={i} className="ai-evidence" onClick={() => onOpenItem(c.feedbackIndex)} title="Open the underlying feedback"
+                  style={{background:'rgba(125,133,144,.06)',border:'1px solid var(--border)',borderRadius:'6px',padding:'10px 12px'}}>
                   <p className="font-sans text-sm font-500 mb-1" style={{color:'var(--text)'}}>{c.title}</p>
                   <p className="font-sans text-xs leading-relaxed" style={{color:'var(--muted)'}}>{c.reason}</p>
+                  <p className="font-mono text-[9px] mt-1.5" style={{color:'rgba(88,166,255,.75)'}}>view source feedback →</p>
                 </div>
               ))}
             </div>
@@ -602,8 +750,12 @@ function FeedbackForm({ onAdd }) {
   const [sentiment, setSentiment] = React.useState('');
   const [loading,   setLoading]   = React.useState(false);
   const [open,      setOpen]      = React.useState(false);
+  const [aiClassifying,   setAiClassifying]   = React.useState(false);
+  const [aiSuggested,     setAiSuggested]     = React.useState(false);
+  const [aiClassifyError, setAiClassifyError] = React.useState('');
 
-  const canSubmit = title.trim() && content.trim() && source && category && sentiment;
+  const canSubmit  = title.trim() && content.trim() && source && category && sentiment;
+  const canClassify = content.trim().length >= 15;
 
   async function submit(e) {
     e.preventDefault();
@@ -611,8 +763,24 @@ function FeedbackForm({ onAdd }) {
     setLoading(true);
     await onAdd({ title: title.trim(), content: content.trim(), source, category, sentiment });
     setTitle(''); setContent(''); setSource(''); setCategory(''); setSentiment('');
+    setAiSuggested(false); setAiClassifyError('');
     setLoading(false);
     setOpen(false);
+  }
+
+  async function handleClassify() {
+    if (!canClassify || aiClassifying) return;
+    setAiClassifying(true); setAiClassifyError(''); setAiSuggested(false);
+    try {
+      const s = await runGroqClassify(content.trim());
+      if (s.title && !title.trim()) setTitle(s.title);
+      if (s.sentiment) setSentiment(s.sentiment);
+      if (s.category)  setCategory(s.category);
+      setAiSuggested(true);
+    } catch (e) {
+      setAiClassifyError('Could not classify: ' + (e.message || 'unknown error'));
+    }
+    setAiClassifying(false);
   }
 
   if (!open) {
@@ -636,6 +804,31 @@ function FeedbackForm({ onAdd }) {
       </div>
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
+          <label className="font-mono text-[10px]" style={{color:'var(--muted)'}}>Description <span style={{color:'var(--neg)'}}>*</span></label>
+          <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Paste raw feedback here — AI can classify it for you…" className="ctrl" required />
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <button type="button" onClick={handleClassify} disabled={aiClassifying || !canClassify} className="btn-ai"
+            title={canClassify ? 'Let AI suggest title, sentiment, and category' : 'Write at least a sentence of feedback first'}>
+            {aiClassifying ? (
+              <svg className="spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+              </svg>
+            ) : (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+            )}
+            {aiClassifying ? 'Classifying…' : 'Auto-classify with AI'}
+          </button>
+          {aiSuggested && !aiClassifying && (
+            <span className="font-mono text-[10px] fade-up" style={{color:'#58a6ff'}}>✓ AI suggestions applied — review before saving</span>
+          )}
+          {aiClassifyError && (
+            <span className="font-mono text-[10px] fade-up" style={{color:'var(--neg)'}}>{aiClassifyError}</span>
+          )}
+        </div>
+        <div className="flex flex-col gap-1">
           <label className="font-mono text-[10px]" style={{color:'var(--muted)'}}>Title <span style={{color:'var(--neg)'}}>*</span></label>
           <input
             type="text"
@@ -645,10 +838,6 @@ function FeedbackForm({ onAdd }) {
             className="ctrl"
             required
           />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="font-mono text-[10px]" style={{color:'var(--muted)'}}>Description <span style={{color:'var(--neg)'}}>*</span></label>
-          <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Full details of the feedback…" className="ctrl" required />
         </div>
         <div className="grid grid-cols-3 gap-2">
           {[
@@ -830,7 +1019,7 @@ function FeedbackDetailModal({ item, onClose, onStatusChange, onDescriptionSave 
 }
 
 /* ── FeedbackCard ── */
-function FeedbackCard({ item, onDelete, onOpenDetail }) {
+function FeedbackCard({ item, onDelete, onOpenDetail, selectMode = false, selected = false, onToggleSelect }) {
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [deleting,      setDeleting]      = React.useState(false);
 
@@ -847,10 +1036,13 @@ function FeedbackCard({ item, onDelete, onOpenDetail }) {
   return (
     <div
       className={`fade-up feedback-card-clickable ${stripe}`}
-      onClick={() => !deleting && !confirmDelete && onOpenDetail(item)}
+      onClick={() => {
+        if (deleting || confirmDelete) return;
+        if (selectMode) { onToggleSelect && onToggleSelect(item.id); } else { onOpenDetail(item); }
+      }}
       style={{
-        background:'var(--surface)',
-        border:'1px solid var(--border)',
+        background: selected ? 'rgba(88,166,255,.06)' : 'var(--surface)',
+        border: selected ? '1px solid rgba(88,166,255,.55)' : '1px solid var(--border)',
         borderRadius:'8px',
         padding:'14px 16px',
         opacity: deleting ? 0.4 : 1,
@@ -881,17 +1073,33 @@ function FeedbackCard({ item, onDelete, onOpenDetail }) {
       ) : (
         <>
           <div className="flex items-start justify-between gap-3">
+            {selectMode && (
+              <span aria-hidden="true" className="shrink-0" style={{
+                width:16, height:16, borderRadius:4, marginTop:2,
+                border: selected ? 'none' : '1.5px solid var(--border-hi)',
+                background: selected ? '#58a6ff' : 'transparent',
+                display:'grid', placeItems:'center',
+              }}>
+                {selected && (
+                  <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                    <path d="M2.5 6.5L5 9l4.5-5.5" stroke="#0d1117" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </span>
+            )}
             <p className="font-sans text-sm font-500 leading-snug flex-1" style={{color:'var(--text)',wordBreak:'break-word'}}>
               {item.title || <span style={{color:'var(--muted)',fontStyle:'italic'}}>Untitled</span>}
             </p>
-            <button
-              onClick={e => { e.stopPropagation(); setConfirmDelete(true); }}
-              className="btn-ghost shrink-0 mt-0.5"
-              title="Delete feedback">
-              <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-              </svg>
-            </button>
+            {!selectMode && (
+              <button
+                onClick={e => { e.stopPropagation(); setConfirmDelete(true); }}
+                className="btn-ghost shrink-0 mt-0.5"
+                title="Delete feedback">
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                  <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                </svg>
+              </button>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-1.5 mt-3">
             <span className={`badge ${sentBadge}`}>{item.sentiment}</span>
@@ -1014,6 +1222,271 @@ function DemoBanner({ onExitDemo }) {
   );
 }
 
+/* ── Insights ── */
+function InsightsPanel({ title, children }) {
+  return (
+    <div style={{background:'var(--surface)',border:'1px solid var(--border-hi)',borderRadius:'10px',padding:'16px 18px'}}>
+      <p className="font-mono text-[10px] uppercase tracking-wider mb-3" style={{color:'var(--muted)'}}>— {title}</p>
+      {children}
+    </div>
+  );
+}
+
+function buildWeeklyBuckets(items, weekCount) {
+  const monday = new Date();
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+  const buckets = [];
+  for (let w = weekCount - 1; w >= 0; w--) {
+    const start = new Date(monday); start.setDate(start.getDate() - w * 7);
+    const end   = new Date(start);  end.setDate(end.getDate() + 7);
+    const inWeek = items.filter(i => { const d = new Date(i.createdAt); return d >= start && d < end; });
+    buckets.push({
+      label: start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      total: inWeek.length,
+      pos: inWeek.filter(i => i.sentiment === 'Positive').length,
+      neg: inWeek.filter(i => i.sentiment === 'Negative').length,
+      neu: inWeek.filter(i => i.sentiment === 'Neutral').length,
+      cats: CATEGORIES.map(c => inWeek.filter(i => i.category === c).length),
+    });
+  }
+  return buckets;
+}
+
+/* Rule-based insight generation: turns raw counts into the sentences
+   a PM would otherwise write by hand after staring at the charts. */
+function generateSignals(items) {
+  const signals = [];
+  const now = Date.now();
+  const ageDays = i => (now - new Date(i.createdAt)) / DAY_MS;
+  const within  = (i, from, to) => { const a = ageDays(i); return a >= from && a < to; };
+
+  // Category momentum: this month vs last month (needs a >=2 item swing to fire)
+  let topRise = null, topFall = null;
+  CATEGORIES.forEach(cat => {
+    const recent = items.filter(i => i.category === cat && within(i, 0, 28)).length;
+    const prior  = items.filter(i => i.category === cat && within(i, 28, 56)).length;
+    if (recent >= 3 && recent >= prior + 2 && (!topRise || recent - prior > topRise.delta)) topRise = { cat, recent, prior, delta: recent - prior };
+    if (prior >= 3 && recent <= prior - 2 && (!topFall || prior - recent > topFall.delta)) topFall = { cat, recent, prior, delta: prior - recent };
+  });
+  if (topRise) signals.push({ type: 'risk', text: `${topRise.cat} feedback is accelerating — ${topRise.recent} items this month vs ${topRise.prior} last month.` });
+  if (topFall) signals.push({ type: 'win',  text: `${topFall.cat} feedback is cooling off — ${topFall.prior} items last month, ${topFall.recent} this month.` });
+
+  // Negative sentiment share: last 4 weeks vs the 4 weeks before
+  const negShare = (from, to) => {
+    const slice = items.filter(i => within(i, from, to));
+    if (slice.length < 5) return null;
+    return Math.round(100 * slice.filter(i => i.sentiment === 'Negative').length / slice.length);
+  };
+  const negNow = negShare(0, 28), negPrev = negShare(28, 56);
+  if (negNow !== null && negPrev !== null && Math.abs(negNow - negPrev) >= 10) {
+    signals.push(negNow > negPrev
+      ? { type: 'risk', text: `Negative sentiment share rose from ${negPrev}% to ${negNow}% over the last four weeks.` }
+      : { type: 'win',  text: `Negative sentiment share fell from ${negPrev}% to ${negNow}% over the last four weeks.` });
+  }
+
+  // Ageing backlog
+  const active = items.filter(i => i.status === 'open' || i.status === 'inprogress');
+  if (active.length > 0) {
+    const oldest = active.reduce((a, b) => new Date(a.createdAt) < new Date(b.createdAt) ? a : b);
+    const age = Math.floor(ageDays(oldest));
+    if (age >= 30) signals.push({ type: 'watch', text: `Oldest unresolved item is ${age} days old: “${oldest.title}”. Decide or decline — a silent backlog erodes user trust.` });
+  }
+
+  // Loudest negative channel this month
+  const negRecent = items.filter(i => i.sentiment === 'Negative' && within(i, 0, 28));
+  if (negRecent.length >= 4) {
+    const counts = {};
+    negRecent.forEach(i => { counts[i.source] = (counts[i.source] || 0) + 1; });
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    signals.push({ type: 'watch', text: `“${top[0]}” is the largest source of negative feedback this month (${top[1]} of ${negRecent.length} items).` });
+  }
+
+  return signals;
+}
+
+function SentimentTrendChart({ buckets }) {
+  const W = 600, H = 170, PADL = 26, PADR = 8, PADT = 12, PADB = 24;
+  const n = buckets.length;
+  const maxY = Math.max(1, ...buckets.map(b => Math.max(b.pos, b.neg, b.neu)));
+  const x = i => PADL + i * (W - PADL - PADR) / (n - 1);
+  const y = v => PADT + (1 - v / maxY) * (H - PADT - PADB);
+  const line = key => buckets.map((b, i) => `${x(i)},${y(b[key])}`).join(' ');
+  const series = [['neg', 'var(--neg)'], ['neu', 'var(--neu)'], ['pos', 'var(--pos)']];
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:'auto'}} role="img" aria-label="Sentiment trend by week">
+      {[0, 0.5, 1].map(f => (
+        <g key={f}>
+          <line x1={PADL} x2={W - PADR} y1={y(f * maxY)} y2={y(f * maxY)} stroke="var(--border)" strokeWidth="1" />
+          <text x={PADL - 6} y={y(f * maxY) + 3} textAnchor="end" fontSize="8" fill="var(--muted)" fontFamily="IBM Plex Mono">{Math.round(f * maxY)}</text>
+        </g>
+      ))}
+      {series.map(([key, color]) => (
+        <g key={key}>
+          <polyline points={line(key)} fill="none" stroke={color} strokeWidth="1.6" strokeLinejoin="round" />
+          {buckets.map((b, i) => <circle key={i} cx={x(i)} cy={y(b[key])} r="2.2" fill={color} />)}
+        </g>
+      ))}
+      {buckets.map((b, i) => (i % 2 === (n - 1) % 2) && (
+        <text key={i} x={x(i)} y={H - 8} textAnchor="middle" fontSize="8" fill="var(--muted)" fontFamily="IBM Plex Mono">{b.label}</text>
+      ))}
+    </svg>
+  );
+}
+
+function VolumeChart({ buckets }) {
+  const W = 600, H = 170, PADL = 26, PADR = 8, PADT = 12, PADB = 24;
+  const n = buckets.length;
+  const maxY = Math.max(1, ...buckets.map(b => b.total));
+  const slot = (W - PADL - PADR) / n;
+  const bw = slot * 0.55;
+  const y = v => PADT + (1 - v / maxY) * (H - PADT - PADB);
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:'auto'}} role="img" aria-label="Feedback volume by week">
+      {[0, 0.5, 1].map(f => (
+        <line key={f} x1={PADL} x2={W - PADR} y1={y(f * maxY)} y2={y(f * maxY)} stroke="var(--border)" strokeWidth="1" />
+      ))}
+      {buckets.map((b, i) => (
+        <g key={i}>
+          <rect x={PADL + i * slot + (slot - bw) / 2} y={y(b.total)} width={bw} height={(H - PADB) - y(b.total)} rx="2" fill="rgba(88,166,255,.55)" />
+          {b.total > 0 && (
+            <text x={PADL + i * slot + slot / 2} y={y(b.total) - 4} textAnchor="middle" fontSize="8" fill="var(--muted)" fontFamily="IBM Plex Mono">{b.total}</text>
+          )}
+        </g>
+      ))}
+      {buckets.map((b, i) => (i % 2 === (n - 1) % 2) && (
+        <text key={i} x={PADL + i * slot + slot / 2} y={H - 8} textAnchor="middle" fontSize="8" fill="var(--muted)" fontFamily="IBM Plex Mono">{b.label}</text>
+      ))}
+    </svg>
+  );
+}
+
+function CategoryMixChart({ buckets }) {
+  const W = 600, H = 170, PADL = 26, PADR = 8, PADT = 12, PADB = 24;
+  const n = buckets.length;
+  const maxY = Math.max(1, ...buckets.map(b => b.total));
+  const slot = (W - PADL - PADR) / n;
+  const bw = slot * 0.6;
+  const y = v => PADT + (1 - v / maxY) * (H - PADT - PADB);
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:'auto'}} role="img" aria-label="Category mix by week">
+      {[0, 0.5, 1].map(f => (
+        <line key={f} x1={PADL} x2={W - PADR} y1={y(f * maxY)} y2={y(f * maxY)} stroke="var(--border)" strokeWidth="1" />
+      ))}
+      {buckets.map((b, i) => {
+        let acc = 0;
+        return (
+          <g key={i}>
+            {b.cats.map((c, ci) => {
+              if (!c) return null;
+              const y1 = y(acc + c), y0 = y(acc);
+              acc += c;
+              return <rect key={ci} x={PADL + i * slot + (slot - bw) / 2} y={y1} width={bw} height={y0 - y1} fill={CAT_COLOR[CATEGORIES[ci]]} opacity="0.8" />;
+            })}
+          </g>
+        );
+      })}
+      {buckets.map((b, i) => (i % 2 === (n - 1) % 2) && (
+        <text key={i} x={PADL + i * slot + slot / 2} y={H - 8} textAnchor="middle" fontSize="8" fill="var(--muted)" fontFamily="IBM Plex Mono">{b.label}</text>
+      ))}
+    </svg>
+  );
+}
+
+function InsightsView({ items }) {
+  if (items.length === 0) {
+    return (
+      <div className="text-center py-20 fade-up">
+        <p className="font-serif text-2xl italic mb-2" style={{color:'var(--muted)'}}>No data to analyze yet</p>
+        <p className="font-mono text-xs" style={{color:'var(--muted)',opacity:.6}}>Insights appear once feedback starts coming in.</p>
+      </div>
+    );
+  }
+
+  const buckets = buildWeeklyBuckets(items, 10);
+  const signals = generateSignals(items);
+  const total = items.length;
+  const addressed = items.filter(i => i.status === 'addressed').length;
+  const active = items.filter(i => i.status === 'open' || i.status === 'inprogress');
+  const addressedRate = Math.round(100 * addressed / total);
+  const avgOpenAge = active.length ? Math.round(active.reduce((s, i) => s + (Date.now() - new Date(i.createdAt)) / DAY_MS, 0) / active.length) : 0;
+  const recent = items.filter(i => (Date.now() - new Date(i.createdAt)) / DAY_MS < 28);
+  const negShareNow = recent.length ? Math.round(100 * recent.filter(i => i.sentiment === 'Negative').length / recent.length) : 0;
+
+  const SIGNAL_STYLE = {
+    risk:  { color: 'var(--neg)', bg: 'rgba(248,81,73,.06)',  border: 'rgba(248,81,73,.2)',  label: 'Risk' },
+    win:   { color: 'var(--pos)', bg: 'rgba(57,211,83,.06)',  border: 'rgba(57,211,83,.2)',  label: 'Win' },
+    watch: { color: '#d2a22a',    bg: 'rgba(210,153,34,.06)', border: 'rgba(210,153,34,.2)', label: 'Watch' },
+  };
+
+  const kpis = [
+    { label: 'Total feedback', value: total,               sub: 'all time' },
+    { label: 'Addressed rate', value: addressedRate + '%', sub: `${addressed} of ${total} resolved` },
+    { label: 'Active backlog', value: active.length,       sub: 'open + in progress' },
+    { label: 'Avg. open age',  value: avgOpenAge + 'd',    sub: 'time sitting unresolved' },
+    { label: 'Negative share', value: negShareNow + '%',   sub: 'of last 28 days' },
+  ];
+
+  return (
+    <div className="fade-up flex flex-col gap-5">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        {kpis.map(k => (
+          <div key={k.label} style={{background:'var(--surface)',border:'1px solid var(--border-hi)',borderRadius:'10px',padding:'14px 16px'}}>
+            <p className="font-mono text-xl font-500" style={{color:'var(--text)',lineHeight:1}}>{k.value}</p>
+            <p className="font-mono text-[10px] mt-1.5" style={{color:'var(--muted)'}}>{k.label}</p>
+            <p className="font-mono text-[9px] mt-0.5" style={{color:'var(--muted)',opacity:.6}}>{k.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      <InsightsPanel title="Signals — auto-generated from the data">
+        {signals.length === 0 ? (
+          <p className="font-sans text-xs" style={{color:'var(--muted)'}}>Not enough movement in the data to surface signals yet.</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {signals.map((s, i) => {
+              const st = SIGNAL_STYLE[s.type];
+              return (
+                <div key={i} className="flex items-start gap-2.5" style={{background:st.bg,border:`1px solid ${st.border}`,borderRadius:'6px',padding:'9px 12px'}}>
+                  <span className="badge shrink-0" style={{color:st.color,border:`1px solid ${st.border}`,background:'transparent'}}>{st.label}</span>
+                  <p className="font-sans text-xs leading-relaxed" style={{color:'var(--text)'}}>{s.text}</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </InsightsPanel>
+
+      <InsightsPanel title="Sentiment trend by week">
+        <SentimentTrendChart buckets={buckets} />
+        <div className="flex gap-4 mt-2">
+          {[['Negative','var(--neg)'],['Neutral','var(--neu)'],['Positive','var(--pos)']].map(([l, c]) => (
+            <span key={l} className="font-mono text-[9px] flex items-center gap-1.5" style={{color:'var(--muted)'}}>
+              <span style={{width:7,height:7,borderRadius:'50%',background:c,display:'inline-block'}} />{l}
+            </span>
+          ))}
+        </div>
+      </InsightsPanel>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <InsightsPanel title="Feedback volume by week">
+          <VolumeChart buckets={buckets} />
+        </InsightsPanel>
+        <InsightsPanel title="Category mix by week">
+          <CategoryMixChart buckets={buckets} />
+          <div className="flex gap-3 mt-2 flex-wrap">
+            {CATEGORIES.map(c => (
+              <span key={c} className="font-mono text-[9px] flex items-center gap-1.5" style={{color:'var(--muted)'}}>
+                <span style={{width:7,height:7,borderRadius:2,background:CAT_COLOR[c],display:'inline-block'}} />{c}
+              </span>
+            ))}
+          </div>
+        </InsightsPanel>
+      </div>
+    </div>
+  );
+}
+
 /* ── Main Tracker ── */
 function FeedbackTracker({ user, isDemo, onExitDemo }) {
   const [items,           setItems]           = React.useState(isDemo ? DEMO_ITEMS : []);
@@ -1027,6 +1500,14 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
   const [aiAnalysis,      setAiAnalysis]      = React.useState(null);
   const [aiError,         setAiError]         = React.useState('');
   const [detailItem,      setDetailItem]      = React.useState(null);
+  const [view,            setView]            = React.useState(() => {
+    const v = new URLSearchParams(window.location.search).get('view');
+    return ['dashboard', 'inbox', 'insights'].includes(v) ? v : 'dashboard';
+  });
+  const [searchQuery,     setSearchQuery]     = React.useState('');
+  const [sortBy,          setSortBy]          = React.useState('newest');
+  const [selectMode,      setSelectMode]      = React.useState(false);
+  const [selectedIds,     setSelectedIds]     = React.useState(() => new Set());
 
   const errTimer = React.useRef(null);
   function showError(msg) {
@@ -1034,6 +1515,18 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
     clearTimeout(errTimer.current);
     errTimer.current = setTimeout(() => setError(''), 4000);
   }
+
+  const analysisKey = 'pulse:analysis:' + (isDemo ? 'demo' : user.id);
+
+  React.useEffect(() => {
+    try {
+      const raw = localStorage.getItem(analysisKey);
+      if (raw) {
+        const rec = JSON.parse(raw);
+        if (rec && rec.result && rec.itemIds) setAiAnalysis(rec);
+      }
+    } catch (_) { /* corrupt record — start fresh */ }
+  }, []);
 
   React.useEffect(() => {
     if (isDemo) return; // skip DB fetch in demo
@@ -1097,25 +1590,72 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
   }
 
   async function handleAIAnalysis() {
-    setAiLoading(true); setAiError(''); setAiAnalysis(null);
+    setView('dashboard');
+    setAiLoading(true); setAiError('');
     const active = items.filter(i => i.status === 'open' || i.status === 'inprogress');
     if (active.length === 0) {
       setAiError('No open or in-progress feedback to analyze.');
       setAiLoading(false); return;
     }
     try {
-      const result = await runGroqAnalysis(items);
-      setAiAnalysis(result);
+      const result = await runGroqAnalysis(active);
+      const record = {
+        result,
+        itemIds:    active.map(i => i.id),
+        itemCount:  active.length,
+        analyzedAt: new Date().toISOString(),
+        snapshot:   activeSignature(items),
+      };
+      setAiAnalysis(record);
+      try { localStorage.setItem(analysisKey, JSON.stringify(record)); } catch (_) {}
     } catch (e) {
       setAiError('AI analysis failed: ' + (e.message || 'Unknown error'));
     }
     setAiLoading(false);
   }
 
+  function dismissAnalysis() {
+    setAiAnalysis(null);
+    try { localStorage.removeItem(analysisKey); } catch (_) {}
+  }
+
+  function openAnalysisItem(feedbackIndex) {
+    if (!aiAnalysis || !feedbackIndex) return;
+    const id = aiAnalysis.itemIds[feedbackIndex - 1];
+    const target = items.find(i => i.id === id);
+    if (target) setDetailItem(target);
+  }
+
   async function handleLogout() { await sb.auth.signOut(); }
 
   function handleCategoryClick(cat) {
     setCategoryFilter(prev => prev === cat ? 'all' : cat);
+    setView('inbox');
+  }
+
+  function toggleSelectMode() {
+    setSelectMode(m => !m);
+    setSelectedIds(new Set());
+  }
+
+  function toggleSelected(id) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleBulkStatus(status) {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    setItems(prev => prev.map(i => ids.includes(i.id) ? { ...i, status } : i));
+    setSelectMode(false);
+    setSelectedIds(new Set());
+    if (isDemo) return;
+
+    const { error } = await sb.from('feedback').update({ status }).in('id', ids);
+    if (error) showError('Failed to bulk update: ' + error.message);
   }
 
   function clearFilters() {
@@ -1123,15 +1663,28 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
     setStatusFilter('all');
     setSourceFilter('all');
     setCategoryFilter('all');
+    setSearchQuery('');
   }
 
-  const hasActiveFilter = sentimentFilter !== 'all' || statusFilter !== 'all' || sourceFilter !== 'all' || categoryFilter !== 'all';
+  const query = searchQuery.trim().toLowerCase();
+  const hasActiveFilter = sentimentFilter !== 'all' || statusFilter !== 'all' || sourceFilter !== 'all' || categoryFilter !== 'all' || query !== '';
 
+  const SENT_ORDER = { Negative: 0, Neutral: 1, Positive: 2 };
   const displayed = items
     .filter(i => sentimentFilter === 'all' || i.sentiment === sentimentFilter)
     .filter(i => statusFilter    === 'all' || i.status    === statusFilter)
     .filter(i => sourceFilter    === 'all' || i.source    === sourceFilter)
-    .filter(i => categoryFilter  === 'all' || i.category  === categoryFilter);
+    .filter(i => categoryFilter  === 'all' || i.category  === categoryFilter)
+    .filter(i => !query || (i.title || '').toLowerCase().includes(query) || (i.content || '').toLowerCase().includes(query))
+    .sort((a, b) => {
+      if (sortBy === 'oldest')   return new Date(a.createdAt) - new Date(b.createdAt);
+      if (sortBy === 'negative') return (SENT_ORDER[a.sentiment] - SENT_ORDER[b.sentiment]) || (new Date(b.createdAt) - new Date(a.createdAt));
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+  const recentItems = [...items]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 4);
 
   const total = items.length;
   const pos   = items.filter(i => i.sentiment === 'Positive').length;
@@ -1166,7 +1719,7 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
         <div className="flex items-start justify-between mb-2">
           <div>
             <h1 className="font-serif text-3xl" style={{color:'var(--text)'}}>Pulse</h1>
-            <p className="font-mono text-xs mt-0.5" style={{color:'var(--muted)'}}>feedback tracker</p>
+            <p className="font-mono text-xs mt-0.5" style={{color:'var(--muted)'}}>feedback intelligence</p>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={handleAIAnalysis} disabled={aiLoading || loading} className="btn-ai">
@@ -1196,6 +1749,18 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
             )}
           </div>
         </div>
+
+        {/* Tab navigation */}
+        <div className="tab-nav">
+          {[['dashboard','Dashboard'],['inbox','Inbox'],['insights','Insights']].map(([key, label]) => (
+            <button key={key} className={`tab${view === key ? ' active' : ''}`} onClick={() => setView(key)}>
+              {label}
+              {key === 'inbox' && !loading && <span className="tab-count">{total}</span>}
+            </button>
+          ))}
+        </div>
+
+        {view === 'dashboard' && (<>
 
         {/* Status summary */}
         {!loading && total > 0 && (
@@ -1234,11 +1799,6 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
           </div>
         )}
 
-        {/* Category Breakdown */}
-        {!loading && total > 0 && (
-          <CategoryBreakdown items={items} activeCategoryFilter={categoryFilter} onCategoryClick={handleCategoryClick} />
-        )}
-
         {aiError && (
           <div className="mb-5 fade-up font-mono text-xs px-4 py-3 rounded-lg flex items-center justify-between"
             style={{background:'rgba(248,81,73,.08)',color:'var(--neg)',border:'1px solid rgba(248,81,73,.2)'}}>
@@ -1247,7 +1807,134 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
           </div>
         )}
 
-        {aiAnalysis && <AIAnalysisPanel analysis={aiAnalysis} onDismiss={() => setAiAnalysis(null)} />}
+        {aiLoading && (
+          <div className="fade-up mb-6 flex items-center gap-3" style={{background:'var(--surface)',border:'1px solid rgba(88,166,255,.3)',borderLeft:'3px solid #58a6ff',borderRadius:'10px',padding:'18px 20px'}}>
+            <svg className="spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" strokeWidth="2.5">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+            <span className="font-mono text-xs" style={{color:'#58a6ff'}}>Analyzing {activeCount} active feedback items…</span>
+          </div>
+        )}
+
+        {aiAnalysis && !aiLoading && (
+          <AIAnalysisPanel
+            analysis={aiAnalysis.result}
+            analyzedAt={aiAnalysis.analyzedAt}
+            itemCount={aiAnalysis.itemCount}
+            isStale={!loading && activeSignature(items) !== aiAnalysis.snapshot}
+            onDismiss={dismissAnalysis}
+            onRerun={handleAIAnalysis}
+            onOpenItem={openAnalysisItem}
+          />
+        )}
+
+        {!aiAnalysis && !aiLoading && !aiError && !loading && total > 0 && (
+          <div className="fade-up mb-6 flex items-center justify-between gap-4 flex-wrap" style={{background:'rgba(88,166,255,.04)',border:'1px dashed rgba(88,166,255,.3)',borderRadius:'10px',padding:'16px 20px'}}>
+            <div>
+              <p className="font-sans text-sm font-500" style={{color:'var(--text)'}}>What should the team fix first?</p>
+              <p className="font-mono text-[11px] mt-1" style={{color:'var(--muted)'}}>Run AI analysis over {activeCount} active items to get a ranked, reasoned priority list.</p>
+            </div>
+            <button onClick={handleAIAnalysis} className="btn-ai shrink-0">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+              Run analysis
+            </button>
+          </div>
+        )}
+
+        {/* Category Breakdown */}
+        {!loading && total > 0 && (
+          <CategoryBreakdown items={items} activeCategoryFilter={categoryFilter} onCategoryClick={handleCategoryClick} />
+        )}
+
+        {/* Recent feedback */}
+        {!loading && total > 0 && (
+          <div className="fade-up">
+            <div className="flex items-center justify-between mb-3">
+              <p className="font-mono text-[10px] uppercase tracking-wider" style={{color:'var(--muted)'}}>— Recent Feedback</p>
+              <button onClick={() => setView('inbox')} className="font-mono text-[11px]" style={{background:'none',border:'none',cursor:'pointer',color:'#58a6ff',padding:0}}>
+                Open inbox →
+              </button>
+            </div>
+            <div className="flex flex-col gap-3">
+              {recentItems.map(item => (
+                <FeedbackCard key={item.id} item={item} onDelete={handleDelete} onOpenDetail={setDetailItem} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {loading && (
+          <div className="flex flex-col gap-3">
+            {[1,2,3].map(n => (
+              <div key={n} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:'8px',padding:'16px'}}>
+                <div className="skel h-4 mb-3" style={{width:`${60+n*10}%`}} />
+                <div className="skel h-3" style={{width:'40%'}} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!loading && total === 0 && (
+          <div className="text-center py-20 fade-up">
+            <p className="font-serif text-2xl italic mb-2" style={{color:'var(--muted)'}}>No feedback yet</p>
+            <p className="font-mono text-xs mb-5" style={{color:'var(--muted)',opacity:.6}}>Head to the inbox to log your first item.</p>
+            <button onClick={() => setView('inbox')} className="btn-primary text-sm">Go to Inbox</button>
+          </div>
+        )}
+
+        </>)}
+
+        {view === 'inbox' && (<>
+
+        {/* Search + sort + select toolbar */}
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <div className="relative flex-1" style={{minWidth:'200px',maxWidth:'360px'}}>
+            <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" width="12" height="12" viewBox="0 0 16 16" fill="none">
+              <circle cx="7" cy="7" r="4.5" stroke="#7d8590" strokeWidth="1.5"/>
+              <path d="M10.5 10.5L14 14" stroke="#7d8590" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search feedback…"
+              className="ctrl"
+              style={{padding:'7px 12px 7px 32px',fontSize:'13px'}}
+            />
+          </div>
+          <div className="relative inline-flex items-center">
+            <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="filter-select" style={{width:'170px'}}>
+              <option value="newest">Sort: Newest</option>
+              <option value="oldest">Sort: Oldest</option>
+              <option value="negative">Sort: Negative first</option>
+            </select>
+            <svg className="pointer-events-none" style={{position:'absolute',right:'10px',top:'50%',transform:'translateY(-50%)'}} width="9" height="9" viewBox="0 0 10 10" fill="none">
+              <path d="M2 3.5L5 6.5L8 3.5" stroke="#7d8590" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <button onClick={toggleSelectMode} className={`btn-soft${selectMode ? ' active' : ''}`}>
+            {selectMode ? 'Done selecting' : 'Select'}
+          </button>
+        </div>
+
+        {/* Bulk action bar */}
+        {selectMode && (
+          <div className="fade-up mb-4 flex items-center gap-3 flex-wrap" style={{background:'rgba(88,166,255,.05)',border:'1px solid rgba(88,166,255,.25)',borderRadius:'8px',padding:'10px 14px'}}>
+            <span className="font-mono text-[11px]" style={{color:'#58a6ff'}}>{selectedIds.size} selected</span>
+            <button onClick={() => setSelectedIds(new Set(displayed.map(i => i.id)))} className="btn-soft">Select all visible</button>
+            <span className="font-mono text-[10px] ml-2" style={{color:'var(--muted)'}}>Set status:</span>
+            {STATUSES.map(s => (
+              <button key={s} onClick={() => handleBulkStatus(s)} disabled={selectedIds.size === 0}
+                className={`badge ${STATUS_BADGE[s]}`}
+                style={{cursor: selectedIds.size === 0 ? 'not-allowed' : 'pointer', opacity: selectedIds.size === 0 ? 0.4 : 1}}>
+                {STATUS_LABEL[s]}
+              </button>
+            ))}
+            <button onClick={toggleSelectMode} className="btn-soft ml-auto">Cancel</button>
+          </div>
+        )}
 
         {/* Filter row + Add button */}
         <div className="flex items-start justify-between gap-4 mb-2">
@@ -1277,6 +1964,7 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
                 {categoryFilter}
               </span>
             )}
+            {query !== '' && <span className="badge badge-source">“{searchQuery.trim()}”</span>}
             <span className="font-mono text-[10px]" style={{color:'var(--muted)'}}>
               — {displayed.length} item{displayed.length !== 1 ? 's' : ''}
             </span>
@@ -1305,7 +1993,25 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
         ) : (
           <div className="flex flex-col gap-3">
             {displayed.map(item => (
-              <FeedbackCard key={item.id} item={item} onDelete={handleDelete} onOpenDetail={setDetailItem} />
+              <FeedbackCard
+                key={item.id} item={item}
+                onDelete={handleDelete} onOpenDetail={setDetailItem}
+                selectMode={selectMode} selected={selectedIds.has(item.id)} onToggleSelect={toggleSelected}
+              />
+            ))}
+          </div>
+        )}
+
+        </>)}
+
+        {view === 'insights' && !loading && <InsightsView items={items} />}
+        {view === 'insights' && loading && (
+          <div className="flex flex-col gap-3">
+            {[1,2,3].map(n => (
+              <div key={n} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:'8px',padding:'16px'}}>
+                <div className="skel h-4 mb-3" style={{width:`${60+n*10}%`}} />
+                <div className="skel h-3" style={{width:'40%'}} />
+              </div>
             ))}
           </div>
         )}
@@ -1327,7 +2033,9 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
 /* ── App ── */
 function App() {
   const [user,    setUser]    = React.useState(null);
-  const [isDemo,  setIsDemo]  = React.useState(false);
+  // ?demo=1 deep-links straight into demo mode — used by the portfolio so a
+  // visitor lands inside the product instead of on the auth screen.
+  const [isDemo,  setIsDemo]  = React.useState(() => new URLSearchParams(window.location.search).get('demo') === '1');
 
   React.useEffect(() => {
     sb.auth.getSession().then(({ data: { session } }) => setUser(session?.user ?? false));
@@ -1338,7 +2046,10 @@ function App() {
   }, []);
 
   function enterDemo() { setIsDemo(true); }
-  function exitDemo()  { setIsDemo(false); }
+  function exitDemo()  {
+    setIsDemo(false);
+    if (window.location.search) window.history.replaceState(null, '', window.location.pathname);
+  }
 
   if (isDemo) {
     return <FeedbackTracker user={{ email: 'demo@preview' }} isDemo={true} onExitDemo={exitDemo} />;
