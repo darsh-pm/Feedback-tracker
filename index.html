@@ -1222,6 +1222,271 @@ function DemoBanner({ onExitDemo }) {
   );
 }
 
+/* ── Insights ── */
+function InsightsPanel({ title, children }) {
+  return (
+    <div style={{background:'var(--surface)',border:'1px solid var(--border-hi)',borderRadius:'10px',padding:'16px 18px'}}>
+      <p className="font-mono text-[10px] uppercase tracking-wider mb-3" style={{color:'var(--muted)'}}>— {title}</p>
+      {children}
+    </div>
+  );
+}
+
+function buildWeeklyBuckets(items, weekCount) {
+  const monday = new Date();
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+  const buckets = [];
+  for (let w = weekCount - 1; w >= 0; w--) {
+    const start = new Date(monday); start.setDate(start.getDate() - w * 7);
+    const end   = new Date(start);  end.setDate(end.getDate() + 7);
+    const inWeek = items.filter(i => { const d = new Date(i.createdAt); return d >= start && d < end; });
+    buckets.push({
+      label: start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      total: inWeek.length,
+      pos: inWeek.filter(i => i.sentiment === 'Positive').length,
+      neg: inWeek.filter(i => i.sentiment === 'Negative').length,
+      neu: inWeek.filter(i => i.sentiment === 'Neutral').length,
+      cats: CATEGORIES.map(c => inWeek.filter(i => i.category === c).length),
+    });
+  }
+  return buckets;
+}
+
+/* Rule-based insight generation: turns raw counts into the sentences
+   a PM would otherwise write by hand after staring at the charts. */
+function generateSignals(items) {
+  const signals = [];
+  const now = Date.now();
+  const ageDays = i => (now - new Date(i.createdAt)) / DAY_MS;
+  const within  = (i, from, to) => { const a = ageDays(i); return a >= from && a < to; };
+
+  // Category momentum: this month vs last month (needs a >=2 item swing to fire)
+  let topRise = null, topFall = null;
+  CATEGORIES.forEach(cat => {
+    const recent = items.filter(i => i.category === cat && within(i, 0, 28)).length;
+    const prior  = items.filter(i => i.category === cat && within(i, 28, 56)).length;
+    if (recent >= 3 && recent >= prior + 2 && (!topRise || recent - prior > topRise.delta)) topRise = { cat, recent, prior, delta: recent - prior };
+    if (prior >= 3 && recent <= prior - 2 && (!topFall || prior - recent > topFall.delta)) topFall = { cat, recent, prior, delta: prior - recent };
+  });
+  if (topRise) signals.push({ type: 'risk', text: `${topRise.cat} feedback is accelerating — ${topRise.recent} items this month vs ${topRise.prior} last month.` });
+  if (topFall) signals.push({ type: 'win',  text: `${topFall.cat} feedback is cooling off — ${topFall.prior} items last month, ${topFall.recent} this month.` });
+
+  // Negative sentiment share: last 4 weeks vs the 4 weeks before
+  const negShare = (from, to) => {
+    const slice = items.filter(i => within(i, from, to));
+    if (slice.length < 5) return null;
+    return Math.round(100 * slice.filter(i => i.sentiment === 'Negative').length / slice.length);
+  };
+  const negNow = negShare(0, 28), negPrev = negShare(28, 56);
+  if (negNow !== null && negPrev !== null && Math.abs(negNow - negPrev) >= 10) {
+    signals.push(negNow > negPrev
+      ? { type: 'risk', text: `Negative sentiment share rose from ${negPrev}% to ${negNow}% over the last four weeks.` }
+      : { type: 'win',  text: `Negative sentiment share fell from ${negPrev}% to ${negNow}% over the last four weeks.` });
+  }
+
+  // Ageing backlog
+  const active = items.filter(i => i.status === 'open' || i.status === 'inprogress');
+  if (active.length > 0) {
+    const oldest = active.reduce((a, b) => new Date(a.createdAt) < new Date(b.createdAt) ? a : b);
+    const age = Math.floor(ageDays(oldest));
+    if (age >= 30) signals.push({ type: 'watch', text: `Oldest unresolved item is ${age} days old: “${oldest.title}”. Decide or decline — a silent backlog erodes user trust.` });
+  }
+
+  // Loudest negative channel this month
+  const negRecent = items.filter(i => i.sentiment === 'Negative' && within(i, 0, 28));
+  if (negRecent.length >= 4) {
+    const counts = {};
+    negRecent.forEach(i => { counts[i.source] = (counts[i.source] || 0) + 1; });
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    signals.push({ type: 'watch', text: `“${top[0]}” is the largest source of negative feedback this month (${top[1]} of ${negRecent.length} items).` });
+  }
+
+  return signals;
+}
+
+function SentimentTrendChart({ buckets }) {
+  const W = 600, H = 170, PADL = 26, PADR = 8, PADT = 12, PADB = 24;
+  const n = buckets.length;
+  const maxY = Math.max(1, ...buckets.map(b => Math.max(b.pos, b.neg, b.neu)));
+  const x = i => PADL + i * (W - PADL - PADR) / (n - 1);
+  const y = v => PADT + (1 - v / maxY) * (H - PADT - PADB);
+  const line = key => buckets.map((b, i) => `${x(i)},${y(b[key])}`).join(' ');
+  const series = [['neg', 'var(--neg)'], ['neu', 'var(--neu)'], ['pos', 'var(--pos)']];
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:'auto'}} role="img" aria-label="Sentiment trend by week">
+      {[0, 0.5, 1].map(f => (
+        <g key={f}>
+          <line x1={PADL} x2={W - PADR} y1={y(f * maxY)} y2={y(f * maxY)} stroke="var(--border)" strokeWidth="1" />
+          <text x={PADL - 6} y={y(f * maxY) + 3} textAnchor="end" fontSize="8" fill="var(--muted)" fontFamily="IBM Plex Mono">{Math.round(f * maxY)}</text>
+        </g>
+      ))}
+      {series.map(([key, color]) => (
+        <g key={key}>
+          <polyline points={line(key)} fill="none" stroke={color} strokeWidth="1.6" strokeLinejoin="round" />
+          {buckets.map((b, i) => <circle key={i} cx={x(i)} cy={y(b[key])} r="2.2" fill={color} />)}
+        </g>
+      ))}
+      {buckets.map((b, i) => (i % 2 === (n - 1) % 2) && (
+        <text key={i} x={x(i)} y={H - 8} textAnchor="middle" fontSize="8" fill="var(--muted)" fontFamily="IBM Plex Mono">{b.label}</text>
+      ))}
+    </svg>
+  );
+}
+
+function VolumeChart({ buckets }) {
+  const W = 600, H = 170, PADL = 26, PADR = 8, PADT = 12, PADB = 24;
+  const n = buckets.length;
+  const maxY = Math.max(1, ...buckets.map(b => b.total));
+  const slot = (W - PADL - PADR) / n;
+  const bw = slot * 0.55;
+  const y = v => PADT + (1 - v / maxY) * (H - PADT - PADB);
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:'auto'}} role="img" aria-label="Feedback volume by week">
+      {[0, 0.5, 1].map(f => (
+        <line key={f} x1={PADL} x2={W - PADR} y1={y(f * maxY)} y2={y(f * maxY)} stroke="var(--border)" strokeWidth="1" />
+      ))}
+      {buckets.map((b, i) => (
+        <g key={i}>
+          <rect x={PADL + i * slot + (slot - bw) / 2} y={y(b.total)} width={bw} height={(H - PADB) - y(b.total)} rx="2" fill="rgba(88,166,255,.55)" />
+          {b.total > 0 && (
+            <text x={PADL + i * slot + slot / 2} y={y(b.total) - 4} textAnchor="middle" fontSize="8" fill="var(--muted)" fontFamily="IBM Plex Mono">{b.total}</text>
+          )}
+        </g>
+      ))}
+      {buckets.map((b, i) => (i % 2 === (n - 1) % 2) && (
+        <text key={i} x={PADL + i * slot + slot / 2} y={H - 8} textAnchor="middle" fontSize="8" fill="var(--muted)" fontFamily="IBM Plex Mono">{b.label}</text>
+      ))}
+    </svg>
+  );
+}
+
+function CategoryMixChart({ buckets }) {
+  const W = 600, H = 170, PADL = 26, PADR = 8, PADT = 12, PADB = 24;
+  const n = buckets.length;
+  const maxY = Math.max(1, ...buckets.map(b => b.total));
+  const slot = (W - PADL - PADR) / n;
+  const bw = slot * 0.6;
+  const y = v => PADT + (1 - v / maxY) * (H - PADT - PADB);
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:'auto'}} role="img" aria-label="Category mix by week">
+      {[0, 0.5, 1].map(f => (
+        <line key={f} x1={PADL} x2={W - PADR} y1={y(f * maxY)} y2={y(f * maxY)} stroke="var(--border)" strokeWidth="1" />
+      ))}
+      {buckets.map((b, i) => {
+        let acc = 0;
+        return (
+          <g key={i}>
+            {b.cats.map((c, ci) => {
+              if (!c) return null;
+              const y1 = y(acc + c), y0 = y(acc);
+              acc += c;
+              return <rect key={ci} x={PADL + i * slot + (slot - bw) / 2} y={y1} width={bw} height={y0 - y1} fill={CAT_COLOR[CATEGORIES[ci]]} opacity="0.8" />;
+            })}
+          </g>
+        );
+      })}
+      {buckets.map((b, i) => (i % 2 === (n - 1) % 2) && (
+        <text key={i} x={PADL + i * slot + slot / 2} y={H - 8} textAnchor="middle" fontSize="8" fill="var(--muted)" fontFamily="IBM Plex Mono">{b.label}</text>
+      ))}
+    </svg>
+  );
+}
+
+function InsightsView({ items }) {
+  if (items.length === 0) {
+    return (
+      <div className="text-center py-20 fade-up">
+        <p className="font-serif text-2xl italic mb-2" style={{color:'var(--muted)'}}>No data to analyze yet</p>
+        <p className="font-mono text-xs" style={{color:'var(--muted)',opacity:.6}}>Insights appear once feedback starts coming in.</p>
+      </div>
+    );
+  }
+
+  const buckets = buildWeeklyBuckets(items, 10);
+  const signals = generateSignals(items);
+  const total = items.length;
+  const addressed = items.filter(i => i.status === 'addressed').length;
+  const active = items.filter(i => i.status === 'open' || i.status === 'inprogress');
+  const addressedRate = Math.round(100 * addressed / total);
+  const avgOpenAge = active.length ? Math.round(active.reduce((s, i) => s + (Date.now() - new Date(i.createdAt)) / DAY_MS, 0) / active.length) : 0;
+  const recent = items.filter(i => (Date.now() - new Date(i.createdAt)) / DAY_MS < 28);
+  const negShareNow = recent.length ? Math.round(100 * recent.filter(i => i.sentiment === 'Negative').length / recent.length) : 0;
+
+  const SIGNAL_STYLE = {
+    risk:  { color: 'var(--neg)', bg: 'rgba(248,81,73,.06)',  border: 'rgba(248,81,73,.2)',  label: 'Risk' },
+    win:   { color: 'var(--pos)', bg: 'rgba(57,211,83,.06)',  border: 'rgba(57,211,83,.2)',  label: 'Win' },
+    watch: { color: '#d2a22a',    bg: 'rgba(210,153,34,.06)', border: 'rgba(210,153,34,.2)', label: 'Watch' },
+  };
+
+  const kpis = [
+    { label: 'Total feedback', value: total,               sub: 'all time' },
+    { label: 'Addressed rate', value: addressedRate + '%', sub: `${addressed} of ${total} resolved` },
+    { label: 'Active backlog', value: active.length,       sub: 'open + in progress' },
+    { label: 'Avg. open age',  value: avgOpenAge + 'd',    sub: 'time sitting unresolved' },
+    { label: 'Negative share', value: negShareNow + '%',   sub: 'of last 28 days' },
+  ];
+
+  return (
+    <div className="fade-up flex flex-col gap-5">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        {kpis.map(k => (
+          <div key={k.label} style={{background:'var(--surface)',border:'1px solid var(--border-hi)',borderRadius:'10px',padding:'14px 16px'}}>
+            <p className="font-mono text-xl font-500" style={{color:'var(--text)',lineHeight:1}}>{k.value}</p>
+            <p className="font-mono text-[10px] mt-1.5" style={{color:'var(--muted)'}}>{k.label}</p>
+            <p className="font-mono text-[9px] mt-0.5" style={{color:'var(--muted)',opacity:.6}}>{k.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      <InsightsPanel title="Signals — auto-generated from the data">
+        {signals.length === 0 ? (
+          <p className="font-sans text-xs" style={{color:'var(--muted)'}}>Not enough movement in the data to surface signals yet.</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {signals.map((s, i) => {
+              const st = SIGNAL_STYLE[s.type];
+              return (
+                <div key={i} className="flex items-start gap-2.5" style={{background:st.bg,border:`1px solid ${st.border}`,borderRadius:'6px',padding:'9px 12px'}}>
+                  <span className="badge shrink-0" style={{color:st.color,border:`1px solid ${st.border}`,background:'transparent'}}>{st.label}</span>
+                  <p className="font-sans text-xs leading-relaxed" style={{color:'var(--text)'}}>{s.text}</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </InsightsPanel>
+
+      <InsightsPanel title="Sentiment trend by week">
+        <SentimentTrendChart buckets={buckets} />
+        <div className="flex gap-4 mt-2">
+          {[['Negative','var(--neg)'],['Neutral','var(--neu)'],['Positive','var(--pos)']].map(([l, c]) => (
+            <span key={l} className="font-mono text-[9px] flex items-center gap-1.5" style={{color:'var(--muted)'}}>
+              <span style={{width:7,height:7,borderRadius:'50%',background:c,display:'inline-block'}} />{l}
+            </span>
+          ))}
+        </div>
+      </InsightsPanel>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <InsightsPanel title="Feedback volume by week">
+          <VolumeChart buckets={buckets} />
+        </InsightsPanel>
+        <InsightsPanel title="Category mix by week">
+          <CategoryMixChart buckets={buckets} />
+          <div className="flex gap-3 mt-2 flex-wrap">
+            {CATEGORIES.map(c => (
+              <span key={c} className="font-mono text-[9px] flex items-center gap-1.5" style={{color:'var(--muted)'}}>
+                <span style={{width:7,height:7,borderRadius:2,background:CAT_COLOR[c],display:'inline-block'}} />{c}
+              </span>
+            ))}
+          </div>
+        </InsightsPanel>
+      </div>
+    </div>
+  );
+}
+
 /* ── Main Tracker ── */
 function FeedbackTracker({ user, isDemo, onExitDemo }) {
   const [items,           setItems]           = React.useState(isDemo ? DEMO_ITEMS : []);
@@ -1736,10 +2001,15 @@ function FeedbackTracker({ user, isDemo, onExitDemo }) {
 
         </>)}
 
-        {view === 'insights' && (
-          <div className="text-center py-20 fade-up">
-            <p className="font-serif text-2xl italic mb-2" style={{color:'var(--muted)'}}>Insights</p>
-            <p className="font-mono text-xs" style={{color:'var(--muted)',opacity:.6}}>Trend analytics coming in the next iteration.</p>
+        {view === 'insights' && !loading && <InsightsView items={items} />}
+        {view === 'insights' && loading && (
+          <div className="flex flex-col gap-3">
+            {[1,2,3].map(n => (
+              <div key={n} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:'8px',padding:'16px'}}>
+                <div className="skel h-4 mb-3" style={{width:`${60+n*10}%`}} />
+                <div className="skel h-3" style={{width:'40%'}} />
+              </div>
+            ))}
           </div>
         )}
 
