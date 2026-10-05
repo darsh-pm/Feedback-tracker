@@ -507,7 +507,7 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no extra
 
   const { data, error } = await sb.functions.invoke('groq-proxy', {
     body: {
-      model: 'llama-3.3-70b-versatile',
+      model: 'openai/gpt-oss-120b',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 1500,
     },
@@ -538,7 +538,7 @@ Return ONLY a valid JSON object (no markdown, no extra text) with this exact str
 
   const { data, error } = await sb.functions.invoke('groq-proxy', {
     body: {
-      model: 'llama-3.3-70b-versatile',
+      model: 'openai/gpt-oss-120b',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 200,
     },
