@@ -526,13 +526,13 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no extra
     );
   }
 
-try {
-  return JSON.parse(text.replace(/```json|```/g, '').trim());
-} catch (err) {
-  console.error('Invalid AI JSON:', text);
-  throw new Error(`AI returned invalid JSON: ${text.slice(0, 300)}`);
+  try {
+    return JSON.parse(text.replace(/```json|```/g, '').trim());
+  } catch (err) {
+    console.error('Invalid AI JSON:', text);
+    throw new Error(`AI returned invalid JSON: ${text.slice(0, 300)}`);
+  }
 }
-
 /* AI triage: classify a raw piece of feedback into the fixed taxonomy.
    The model only suggests — the human confirms or overrides before saving. */
 async function runGroqClassify(text) {
