@@ -509,14 +509,23 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no extra
     body: {
       model: 'openai/gpt-oss-120b',
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 1500,
+      max_tokens: 3000,
     },
   });
   
   if (error) throw new Error(error.message);
 
   const text = data.choices?.[0]?.message?.content || '';
+
+  if (!text.trim()) {
+    throw new Error('AI returned an empty response');
+}
+
+try {
   return JSON.parse(text.replace(/```json|```/g, '').trim());
+} catch (err) {
+  console.error('Invalid AI JSON:', text);
+  throw new Error(`AI returned invalid JSON: ${text.slice(0, 300)}`);
 }
 
 /* AI triage: classify a raw piece of feedback into the fixed taxonomy.
@@ -540,7 +549,7 @@ Return ONLY a valid JSON object (no markdown, no extra text) with this exact str
     body: {
       model: 'openai/gpt-oss-120b',
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 200,
+      max_tokens: 300,
     },
   });
   if (error) throw new Error(error.message);
