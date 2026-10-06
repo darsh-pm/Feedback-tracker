@@ -517,8 +517,6 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no extra
 
   const text = data.choices?.[0]?.message?.content || '';
   
-  console.log('GROQ FULL RESPONSE:', data);
-  console.log('GROQ CONTENT:', text);
   
   if (!text.trim()) {
     throw new Error(
