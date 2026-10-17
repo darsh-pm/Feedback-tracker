@@ -2064,7 +2064,7 @@ function App() {
   }
 
   if (isDemo) {
-    return <FeedbackTracker user={{ email: 'demo@preview' }} isDemo={true} onExitDemo={exitDemo} />;
+    return <FeedbackTracker key="demo" user={{ email: 'demo@preview' }} isDemo={true} onExitDemo={exitDemo} />;
   }
 
   if (user === null) return (
@@ -2073,7 +2073,7 @@ function App() {
     </div>
   );
   if (user === false) return <AuthForm onEnterDemo={enterDemo} />;
-  return <FeedbackTracker user={user} isDemo={false} onExitDemo={null} />;
+  return <FeedbackTracker key={user.id} user={user} isDemo={false} onExitDemo={null} />;
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App />);
